@@ -44,6 +44,18 @@ const searchHistoryDiv = document.getElementById('searchHistory');
 const historyList = document.getElementById('historyList');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
+// Éléments Discogs
+const discogsSearchForm = document.getElementById('discogsSearchForm');
+const discogsSearchQuery = document.getElementById('discogsSearchQuery');
+const discogsSearchBtn = document.getElementById('discogsSearchBtn');
+const discogsSearchText = document.getElementById('discogsSearchText');
+const discogsSearchLoading = document.getElementById('discogsSearchLoading');
+const discogsError = document.getElementById('discogsError');
+const discogsResults = document.getElementById('discogsResults');
+const discogsResultsTitle = document.getElementById('discogsResultsTitle');
+const discogsResultsCount = document.getElementById('discogsResultsCount');
+const discogsTracksList = document.getElementById('discogsTracksList');
+
 // Éléments du lecteur
 const playerBar = document.querySelector('.player-bar');
 const playPauseBtn = document.getElementById('playPauseBtn');
@@ -687,6 +699,130 @@ function initializeApp() {
     }
 }
 
+// --- Fonctionnalités Discogs ---
+async function searchDiscogsTrack(query) {
+    const searchUrl = `${DISCOGS_API_URL}/database/search`;
+    const params = new URLSearchParams({
+        q: query,
+        type: 'release',
+        token: DISCOGS_TOKEN,
+        per_page: 50
+    });
+
+    try {
+        const response = await fetch(`${searchUrl}?${params}`, {
+            headers: {
+                'User-Agent': 'MelodyMix/1.0 +http://localhost:8000'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erreur Discogs: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Erreur lors de la recherche Discogs:', error);
+        throw error;
+    }
+}
+
+function displayDiscogsResults(data, query) {
+    const tracks = data.results || [];
+    
+    // Mise à jour du titre et du nombre de résultats
+    discogsResultsTitle.textContent = `Résultats pour "${query}"`;
+    discogsResultsCount.textContent = `${tracks.length} résultat${tracks.length > 1 ? 's' : ''}`;
+    
+    // Vider la liste précédente
+    discogsTracksList.innerHTML = '';
+    
+    if (tracks.length === 0) {
+        discogsTracksList.innerHTML = `
+            <div class="no-results">
+                <p>Aucun résultat trouvé pour "${query}"</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Afficher chaque track
+    tracks.forEach((track, index) => {
+        const trackElement = createDiscogsTrackElement(track, index + 1);
+        discogsTracksList.appendChild(trackElement);
+    });
+    
+    // Afficher les résultats
+    discogsResults.classList.remove('hidden');
+}
+
+function createDiscogsTrackElement(track, index) {
+    const div = document.createElement('div');
+    div.className = 'track-item';
+    
+    const title = track.title || 'Titre inconnu';
+    const artist = track.title ? track.title.split(' - ')[0] : 'Artiste inconnu';
+    const album = track.title ? track.title.split(' - ').slice(1).join(' - ') : '';
+    const year = track.year || '';
+    const format = track.format ? track.format.join(', ') : '';
+    const label = track.label ? track.label.join(', ') : '';
+    
+    div.innerHTML = `
+        <div class="track-info">
+            <div class="track-title">${title}</div>
+            <div class="track-artist">${artist}</div>
+            <div class="track-details">${format}${label ? ` • ${label}` : ''}</div>
+        </div>
+        <div class="track-year">${year}</div>
+    `;
+    
+    div.addEventListener('click', () => {
+        console.log('Track Discogs sélectionné:', track);
+    });
+    
+    return div;
+}
+
+function showDiscogsError(message) {
+    discogsError.textContent = message;
+    discogsError.classList.remove('hidden');
+    
+    setTimeout(() => {
+        discogsError.classList.add('hidden');
+    }, 5000);
+}
+
+// Gestion du formulaire de recherche Discogs
+function handleDiscogsSearch(event) {
+    event.preventDefault();
+    
+    const query = discogsSearchQuery.value.trim();
+    if (!query) return;
+    
+    // Animation de chargement
+    discogsSearchText.classList.add('hidden');
+    discogsSearchLoading.classList.remove('hidden');
+    discogsSearchBtn.disabled = true;
+    discogsError.classList.add('hidden');
+    
+    // Faire la recherche
+    searchDiscogsTrack(query)
+        .then(data => {
+            displayDiscogsResults(data, query);
+        })
+        .catch(error => {
+            showDiscogsError('Erreur lors de la recherche Discogs. Veuillez réessayer.');
+            console.error('Erreur Discogs:', error);
+        })
+        .finally(() => {
+            // Arrêter l'animation de chargement
+            discogsSearchText.classList.remove('hidden');
+            discogsSearchLoading.classList.add('hidden');
+            discogsSearchBtn.disabled = false;
+        });
+}
+
 // Gestion des onglets
 function initializeTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');
@@ -716,6 +852,11 @@ function initializeTabs() {
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
     initializeTabs();
+    
+    // Event listener pour Discogs
+    if (discogsSearchForm) {
+        discogsSearchForm.addEventListener('submit', handleDiscogsSearch);
+    }
 });
 
 // Backup : initialiser si la page est déjà chargée
@@ -723,8 +864,14 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         initializeApp();
         initializeTabs();
+        if (discogsSearchForm) {
+            discogsSearchForm.addEventListener('submit', handleDiscogsSearch);
+        }
     });
 } else {
     initializeApp();
     initializeTabs();
+    if (discogsSearchForm) {
+        discogsSearchForm.addEventListener('submit', handleDiscogsSearch);
+    }
 }

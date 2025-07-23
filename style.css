@@ -166,46 +166,190 @@ body {
     }
 }
 
-/* Contenu placeholder pour Discogs */
-.placeholder-content {
+/* Interface de recherche Discogs */
+.discogs-search-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    min-height: 60vh;
     text-align: center;
-    padding: 80px 40px;
-    background-color: var(--card-bg);
-    border-radius: 16px;
-    margin-top: 40px;
+    padding: 40px;
 }
 
-.placeholder-icon {
-    width: 80px;
-    height: 80px;
+.discogs-search-header {
+    margin-bottom: 40px;
+}
+
+.discogs-search-header h1 {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text-color);
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.discogs-search-header p {
+    font-size: 18px;
+    color: var(--text-color-light);
+    font-weight: 400;
+}
+
+.discogs-search-form {
+    width: 100%;
+    max-width: 600px;
+}
+
+.discogs-search-input {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    background-color: rgba(255, 112, 67, 0.1);
-    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    padding: 4px;
+    transition: all 0.3s ease;
+}
+
+.discogs-search-input:focus-within {
+    border-color: var(--accent-color);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.discogs-search-input i {
+    color: var(--text-color-light);
+    font-size: 18px;
+    margin-left: 20px;
+    margin-right: 16px;
+}
+
+.discogs-search-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-color);
+    font-size: 16px;
+    font-family: var(--font-family);
+    padding: 16px 0;
+}
+
+.discogs-search-input input::placeholder {
+    color: var(--text-color-disabled);
+}
+
+.discogs-search-input button {
+    background-color: var(--accent-color);
+    border: none;
+    border-radius: 46px;
+    padding: 12px 24px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 4px;
+}
+
+.discogs-search-input button:hover {
+    background-color: var(--accent-color-hover);
+    transform: translateY(-1px);
+}
+
+/* Résultats Discogs */
+.discogs-results {
+    margin-top: 40px;
+    max-width: 800px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 24px;
+    padding: 0 8px;
 }
 
-.placeholder-icon i {
-    font-size: 36px;
-    color: var(--accent-color);
-}
-
-.placeholder-content h3 {
+.results-header h3 {
     font-size: 24px;
     font-weight: 600;
-    margin-bottom: 8px;
     color: var(--text-color);
 }
 
-.placeholder-content p {
-    font-size: 16px;
+.results-count {
+    font-size: 14px;
     color: var(--text-color-light);
-    max-width: 400px;
+    font-weight: 500;
+}
+
+.tracks-list {
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.track-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.track-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.track-item:last-child {
+    border-bottom: none;
+}
+
+.track-info {
+    flex: 1;
+    text-align: left;
+}
+
+.track-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-color);
+    margin-bottom: 4px;
+}
+
+.track-artist {
+    font-size: 14px;
+    color: var(--text-color-light);
+    margin-bottom: 2px;
+}
+
+.track-details {
+    font-size: 12px;
+    color: var(--text-color-disabled);
+}
+
+.track-year {
+    font-size: 14px;
+    color: var(--text-color-light);
+    font-weight: 500;
+    min-width: 60px;
+    text-align: right;
+}
+
+.no-results {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.no-results p {
+    color: var(--text-color-light);
+    font-size: 16px;
 }
     grid-row: 1 / 2;
 }

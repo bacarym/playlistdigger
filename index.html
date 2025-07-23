@@ -124,17 +124,35 @@
 
             <!-- Section Discogs -->
             <div id="discogs-section" class="tab-content">
-                <header class="main-header">
-                    <h2>Discogs</h2>
-                    <p>Fonctionnalité Discogs en cours de développement...</p>
-                </header>
-
-                <div class="placeholder-content">
-                    <div class="placeholder-icon">
-                        <i class="fas fa-compact-disc"></i>
+                <div class="discogs-search-container">
+                    <div class="discogs-search-header">
+                        <h1>Rechercher sur Discogs</h1>
+                        <p>Trouvez des tracks dans la base de données musicale Discogs</p>
                     </div>
-                    <h3>Bientôt disponible</h3>
-                    <p>L'intégration Discogs sera ajoutée prochainement.</p>
+                    
+                    <form id="discogsSearchForm" class="discogs-search-form">
+                        <div class="discogs-search-input">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="discogsSearchQuery" placeholder="Rechercher une track..." required>
+                            <button type="submit" id="discogsSearchBtn">
+                                <span id="discogsSearchText">Rechercher</span>
+                                <span id="discogsSearchLoading" class="hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div id="discogsError" class="error-message hidden"></div>
+                </div>
+
+                <!-- Résultats Discogs -->
+                <div id="discogsResults" class="discogs-results hidden">
+                    <div class="results-header">
+                        <h3 id="discogsResultsTitle">Résultats de recherche</h3>
+                        <span id="discogsResultsCount" class="results-count"></span>
+                    </div>
+                    <div id="discogsTracksList" class="tracks-list">
+                        <!-- Les résultats apparaissent ici -->
+                    </div>
                 </div>
             </div>
         </main>
@@ -186,6 +204,6 @@
     </div>
     
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="script.js?v=1.7"></script>
+    <script src="script.js?v=1.8"></script>
 </body>
 </html> 
