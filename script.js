@@ -988,16 +988,19 @@ async function searchYouTubeForTrack(trackTitle, artistName) {
         
         if (data.items && data.items.length > 0) {
             const video = data.items[0];
-            // Récupérer les stats de la vidéo
+            // Récupérer les stats de la vidéo (vues et likes)
             const statsResponse = await fetch(`${API_BASE_URL}/videos?part=statistics&id=${video.id.videoId}&key=${API_KEY}`);
             const statsData = await statsResponse.json();
+            
+            const stats = statsData.items[0]?.statistics || {};
             
             return {
                 id: video.id.videoId,
                 title: video.snippet.title,
                 thumbnail: video.snippet.thumbnails.medium.url,
                 channelTitle: video.snippet.channelTitle,
-                viewCount: statsData.items[0]?.statistics?.viewCount || '0'
+                viewCount: stats.viewCount || '0',
+                likeCount: stats.likeCount || '0'
             };
         }
         return null;
@@ -1087,6 +1090,10 @@ function createTracklistElement(track, index, artistName) {
         parseInt(track.youtubeData.viewCount).toLocaleString() : 
         'N/A';
     
+    const likeCount = hasYouTube ? 
+        parseInt(track.youtubeData.likeCount).toLocaleString() : 
+        'N/A';
+    
     // Nettoyer et formater la durée
     const duration = track.duration || '';
     const cleanDuration = duration.toString().replace(/[^\d:]/g, '');
@@ -1100,6 +1107,7 @@ function createTracklistElement(track, index, artistName) {
             </div>
         </div>
         <div class="track-duration">${cleanDuration}</div>
+        <div class="track-likes">${likeCount}</div>
         <div class="track-plays">${viewCount}</div>
         <div class="track-actions">
             ${playButton}
