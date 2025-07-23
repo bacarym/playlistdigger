@@ -440,6 +440,192 @@ body {
     width: 100%;
 }
 
+/* Contrôles du mode populaire */
+.popular-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 0 8px;
+}
+
+.popular-btn, .back-to-results-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font-family);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.popular-btn {
+    background-color: var(--accent-color);
+    color: #ffffff;
+}
+
+.popular-btn:hover {
+    background-color: var(--accent-color-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 112, 67, 0.3);
+}
+
+.back-to-results-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.back-to-results-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent-color);
+}
+
+/* Loading pour le mode populaire */
+.popular-loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    margin-bottom: 24px;
+}
+
+.popular-loading-container .loading-spinner {
+    font-size: 32px;
+    color: var(--accent-color);
+    margin-bottom: 16px;
+}
+
+.popular-loading-container p {
+    font-size: 18px;
+    color: var(--text-color-light);
+    margin-bottom: 16px;
+}
+
+/* Container des tracks populaires */
+.popular-tracks-container {
+    max-width: 1200px;
+    width: 100%;
+}
+
+.popular-tracks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 8px;
+}
+
+.popular-tracks-header h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.popular-tracks-header h3::before {
+    content: "🔥";
+    font-size: 20px;
+}
+
+.popular-info {
+    font-size: 14px;
+    color: var(--text-color-light);
+    font-weight: 500;
+}
+
+/* Table des tracks populaires */
+.popular-tracks-container .table-header {
+    display: grid;
+    grid-template-columns: 60px 1fr 200px 100px 120px 100px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+    color: var(--text-color-light);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    gap: 16px;
+}
+
+.popular-tracks-container .table-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 200px 100px 120px 100px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s ease;
+    gap: 16px;
+}
+
+.popular-tracks-container .table-row:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.popular-tracks-container .track-artist {
+    color: var(--text-color-light);
+    font-size: 14px;
+}
+
+.popular-tracks-container .track-likes {
+    text-align: right;
+    font-size: 14px;
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.popular-tracks-container .track-plays {
+    text-align: right;
+    font-size: 14px;
+    color: var(--text-color-disabled);
+}
+
+.popular-tracks-container .track-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Bouton Load More */
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.load-more-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    font-family: var(--font-family);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.load-more-btn:hover {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
 /* Page tracklist Discogs */
 .tracklist-page-header {
     display: flex;

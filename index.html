@@ -6,7 +6,7 @@
     <title>MelodyMix - Générateur de Playlist</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=2.8">
+    <link rel="stylesheet" href="style.css?v=2.9">
 </head>
 <body>
     <div class="app-container">
@@ -161,9 +161,60 @@
                     </div>
                 </div>
 
+                <!-- Bouton Popular et contrôles -->
+                <div class="popular-controls">
+                    <button id="popularBtn" class="popular-btn">
+                        <i class="fas fa-fire"></i>
+                        Populaire
+                    </button>
+                    <button id="backToResultsBtn" class="back-to-results-btn hidden">
+                        <i class="fas fa-list"></i>
+                        Retour aux résultats
+                    </button>
+                </div>
+
+                <!-- Loading pour le mode populaire -->
+                <div id="popularLoadingContainer" class="popular-loading-container hidden">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p>Analyse des tracks les plus populaires...</p>
+                    <div id="popularLoadingProgress" class="loading-progress">
+                        <span id="popularProgressText">0/0</span>
+                    </div>
+                </div>
+
+                <!-- Container normal des résultats -->
                 <div id="discogsResultsContainer" class="discogs-results-container">
                     <div id="discogsTracksList" class="tracks-list">
                         <!-- Les résultats apparaissent ici -->
+                    </div>
+                </div>
+
+                <!-- Container des tracks populaires -->
+                <div id="popularTracksContainer" class="popular-tracks-container hidden">
+                    <div class="popular-tracks-header">
+                        <h3>Tracks les plus populaires</h3>
+                        <span id="popularTracksInfo" class="popular-info">Top 10 des tracks les plus likées</span>
+                    </div>
+                    <div class="playlist-table">
+                        <div class="table-header">
+                            <div class="track-number">#</div>
+                            <div class="track-title">Titre</div>
+                            <div class="track-artist">Artiste</div>
+                            <div class="track-likes">Likes</div>
+                            <div class="track-plays">Lectures</div>
+                            <div class="track-actions"></div>
+                        </div>
+                        <div id="popularTracksList" class="table-body">
+                            <!-- Les tracks populaires apparaissent ici -->
+                        </div>
+                    </div>
+                    <div class="load-more-container">
+                        <button id="loadMoreTracksBtn" class="load-more-btn hidden">
+                            <i class="fas fa-plus"></i>
+                            +5 tracks
+                        </button>
                     </div>
                 </div>
             </div>
@@ -264,6 +315,6 @@
     </div>
     
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="script.js?v=2.8"></script>
+    <script src="script.js?v=2.9"></script>
 </body>
 </html> 

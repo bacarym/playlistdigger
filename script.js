@@ -19,6 +19,10 @@ let currentPage = 'home';
 let discogsSearchHistory = [];
 let currentTracklistTracks = [];
 let isPlayingFromTracklist = false;
+let currentDiscogsResults = [];
+let popularTracks = [];
+let popularTracksDisplayed = 0;
+let isPopularMode = false;
 
 // Éléments du DOM
 const form = document.getElementById('playlistForm');
@@ -61,6 +65,16 @@ const discogsResultsPageCount = document.getElementById('discogsResultsPageCount
 const discogsBackBtn = document.getElementById('discogs-back-btn');
 const discogsHistoryList = document.getElementById('discogsHistoryList');
 const clearDiscogsHistoryBtn = document.getElementById('clearDiscogsHistoryBtn');
+
+// Éléments pour le mode populaire
+const popularBtn = document.getElementById('popularBtn');
+const backToResultsBtn = document.getElementById('backToResultsBtn');
+const popularLoadingContainer = document.getElementById('popularLoadingContainer');
+const popularProgressText = document.getElementById('popularProgressText');
+const popularTracksContainer = document.getElementById('popularTracksContainer');
+const popularTracksList = document.getElementById('popularTracksList');
+const popularTracksInfo = document.getElementById('popularTracksInfo');
+const loadMoreTracksBtn = document.getElementById('loadMoreTracksBtn');
 
 // Éléments tracklist Discogs
 const discogsTracklistPage = document.getElementById('discogs-tracklist-page');
@@ -864,6 +878,9 @@ async function searchDiscogsTrack(query) {
 function displayDiscogsResults(data, query) {
     const tracks = data.results || [];
     
+    // Sauvegarder les résultats pour la fonctionnalité populaire
+    currentDiscogsResults = tracks;
+    
     // Mise à jour du titre et du nombre de résultats
     discogsResultsPageTitle.textContent = `Résultats pour "${query}"`;
     discogsResultsPageCount.textContent = `${tracks.length} résultat${tracks.length > 1 ? 's' : ''}`;
@@ -884,6 +901,9 @@ function displayDiscogsResults(data, query) {
             discogsTracksList.appendChild(trackElement);
         });
     }
+    
+    // Réinitialiser le mode populaire
+    resetPopularMode();
     
     // Naviguer vers la page de résultats
     navigateToDiscogsResults();
@@ -1323,6 +1343,272 @@ async function handlePreviewClick(releaseId, artistName) {
     }
 }
 
+// --- Fonctionnalités mode populaire ---
+
+// Réinitialiser le mode populaire
+function resetPopularMode() {
+    isPopularMode = false;
+    popularTracks = [];
+    popularTracksDisplayed = 0;
+    
+    // Afficher les contrôles normaux
+    popularBtn.classList.remove('hidden');
+    backToResultsBtn.classList.add('hidden');
+    
+    // Afficher la liste normale, cacher la liste populaire
+    document.getElementById('discogsResultsContainer').classList.remove('hidden');
+    popularTracksContainer.classList.add('hidden');
+    popularLoadingContainer.classList.add('hidden');
+}
+
+// Passer en mode populaire
+function switchToPopularMode() {
+    isPopularMode = true;
+    
+    // Inverser les contrôles
+    popularBtn.classList.add('hidden');
+    backToResultsBtn.classList.remove('hidden');
+    
+    // Cacher la liste normale, afficher la liste populaire
+    document.getElementById('discogsResultsContainer').classList.add('hidden');
+    popularTracksContainer.classList.remove('hidden');
+}
+
+// Gestion du clic sur le bouton populaire
+async function handlePopularClick() {
+    if (currentDiscogsResults.length === 0) {
+        console.log('Aucun résultat à analyser');
+        return;
+    }
+    
+    console.log('🔥 Analyse populaire demandée pour', currentDiscogsResults.length, 'résultats');
+    
+    // Afficher le loading
+    popularLoadingContainer.classList.remove('hidden');
+    popularProgressText.textContent = `0/${currentDiscogsResults.length}`;
+    
+    try {
+        // Analyser toutes les tracks
+        popularTracks = await analyzeAllTracks(currentDiscogsResults);
+        
+        // Cacher le loading
+        popularLoadingContainer.classList.add('hidden');
+        
+        if (popularTracks.length === 0) {
+            console.log('❌ Aucune track populaire trouvée');
+            return;
+        }
+        
+        // Trier par likes (décroissant)
+        popularTracks.sort((a, b) => parseInt(b.likeCount) - parseInt(a.likeCount));
+        
+        console.log('✅ Tracks populaires trouvées:', popularTracks.length);
+        
+        // Passer en mode populaire et afficher
+        switchToPopularMode();
+        displayPopularTracks();
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'analyse populaire:', error);
+        popularLoadingContainer.classList.add('hidden');
+    }
+}
+
+// Analyser toutes les tracks de tous les résultats
+async function analyzeAllTracks(results) {
+    const allTracks = [];
+    
+    for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        popularProgressText.textContent = `${i + 1}/${results.length}`;
+        
+        try {
+            console.log(`🔍 Analyse ${i + 1}/${results.length}: ${result.title}`);
+            
+            // Récupérer les détails de cette release
+            const releaseData = await getDiscogsReleaseDetails(result.id);
+            
+            if (!releaseData.tracklist || releaseData.tracklist.length === 0) {
+                console.log('Pas de tracklist pour:', result.title);
+                continue;
+            }
+            
+            const artistName = releaseData.artists?.[0]?.name || 'Unknown Artist';
+            
+            // Analyser chaque track de cette release
+            for (const track of releaseData.tracklist) {
+                console.log(`  🎵 Recherche: ${track.title} par ${artistName}`);
+                
+                const youtubeData = await searchYouTubeForTrack(track.title, artistName);
+                
+                if (youtubeData && parseInt(youtubeData.likeCount) > 0) {
+                    allTracks.push({
+                        title: track.title,
+                        artist: artistName,
+                        album: releaseData.title,
+                        position: track.position,
+                        duration: track.duration || '',
+                        likeCount: youtubeData.likeCount,
+                        viewCount: youtubeData.viewCount,
+                        youtubeId: youtubeData.id,
+                        thumbnail: youtubeData.thumbnail
+                    });
+                    
+                    console.log(`    ✅ Trouvé: ${youtubeData.likeCount} likes`);
+                }
+                
+                // Petite pause pour éviter les rate limits
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+        } catch (error) {
+            console.error(`❌ Erreur pour ${result.title}:`, error);
+        }
+        
+        // Pause entre les releases
+        await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    
+    return allTracks;
+}
+
+// Afficher les tracks populaires
+function displayPopularTracks() {
+    popularTracksDisplayed = Math.min(10, popularTracks.length);
+    
+    // Mettre à jour l'info
+    popularTracksInfo.textContent = `Top ${popularTracksDisplayed} des ${popularTracks.length} tracks trouvées`;
+    
+    // Vider la liste
+    popularTracksList.innerHTML = '';
+    
+    // Afficher les premières tracks
+    for (let i = 0; i < popularTracksDisplayed; i++) {
+        const track = popularTracks[i];
+        const trackElement = createPopularTrackElement(track, i + 1);
+        popularTracksList.appendChild(trackElement);
+    }
+    
+    // Gérer le bouton "Load More"
+    if (popularTracksDisplayed < popularTracks.length) {
+        loadMoreTracksBtn.classList.remove('hidden');
+        const remaining = popularTracks.length - popularTracksDisplayed;
+        const toShow = Math.min(5, remaining);
+        loadMoreTracksBtn.innerHTML = `<i class="fas fa-plus"></i> +${toShow} tracks`;
+    } else {
+        loadMoreTracksBtn.classList.add('hidden');
+    }
+}
+
+// Créer un élément de track populaire
+function createPopularTrackElement(track, index) {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    
+    const likeCount = parseInt(track.likeCount).toLocaleString();
+    const viewCount = parseInt(track.viewCount).toLocaleString();
+    const cleanDuration = track.duration.toString().replace(/[^\d:]/g, '');
+    
+    div.innerHTML = `
+        <div class="track-number">${index}</div>
+        <div class="track-title">
+            <div class="track-info">
+                <div class="track-name">${track.title}</div>
+                <div class="track-source">De l'album: ${track.album}</div>
+            </div>
+        </div>
+        <div class="track-artist">${track.artist}</div>
+        <div class="track-likes">${likeCount}</div>
+        <div class="track-plays">${viewCount}</div>
+        <div class="track-actions">
+            <button class="play-btn" data-youtube-id="${track.youtubeId}" title="Écouter cette track">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="save-track-btn" data-track='${JSON.stringify({
+                id: track.youtubeId,
+                title: track.title,
+                artist: track.artist,
+                thumbnail: track.thumbnail
+            }).replace(/"/g, '&quot;')}' title="Ajouter à une playlist">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    `;
+    
+    // Event listeners
+    const playBtn = div.querySelector('.play-btn');
+    if (playBtn) {
+        playBtn.addEventListener('click', () => {
+            playPopularTrack(track);
+        });
+    }
+    
+    const saveBtn = div.querySelector('.save-track-btn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const trackData = JSON.parse(e.target.closest('.save-track-btn').dataset.track);
+            trackToSave = trackData;
+            showSaveToPlaylistModal();
+        });
+    }
+    
+    return div;
+}
+
+// Jouer une track populaire
+function playPopularTrack(track) {
+    console.log('🎵 Lecture track populaire:', track.title);
+    
+    // Mettre à jour le lecteur
+    playerThumbnail.src = track.thumbnail;
+    playerTitle.textContent = track.title;
+    playerArtist.textContent = track.artist;
+    
+    // Lancer la lecture
+    isPlayingFromTracklist = false;
+    
+    if (!player) {
+        initializeYouTubePlayer();
+    }
+    
+    waitForPlayer(() => {
+        try {
+            player.loadVideoById(track.youtubeId);
+        } catch (error) {
+            console.error('❌ Erreur lecture track populaire:', error);
+        }
+    }, 15);
+}
+
+// Charger plus de tracks populaires
+function loadMorePopularTracks() {
+    const currentCount = popularTracksDisplayed;
+    const remaining = popularTracks.length - currentCount;
+    const toAdd = Math.min(5, remaining);
+    
+    // Ajouter les 5 suivantes
+    for (let i = currentCount; i < currentCount + toAdd; i++) {
+        const track = popularTracks[i];
+        const trackElement = createPopularTrackElement(track, i + 1);
+        popularTracksList.appendChild(trackElement);
+    }
+    
+    popularTracksDisplayed += toAdd;
+    
+    // Mettre à jour l'info
+    popularTracksInfo.textContent = `Top ${popularTracksDisplayed} des ${popularTracks.length} tracks trouvées`;
+    
+    // Gérer le bouton
+    if (popularTracksDisplayed >= popularTracks.length) {
+        loadMoreTracksBtn.classList.add('hidden');
+    } else {
+        const newRemaining = popularTracks.length - popularTracksDisplayed;
+        const newToShow = Math.min(5, newRemaining);
+        loadMoreTracksBtn.innerHTML = `<i class="fas fa-plus"></i> +${newToShow} tracks`;
+    }
+}
+
 // Fonction principale pour traiter une release Discogs
 async function handleDiscogsReleaseClick(releaseId) {
     try {
@@ -1520,6 +1806,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (discogsTracklistBackBtn) {
         discogsTracklistBackBtn.addEventListener('click', navigateBackToDiscogsResults);
     }
+    
+    // Event listeners pour le mode populaire
+    if (popularBtn) {
+        popularBtn.addEventListener('click', handlePopularClick);
+    }
+    
+    if (backToResultsBtn) {
+        backToResultsBtn.addEventListener('click', resetPopularMode);
+    }
+    
+    if (loadMoreTracksBtn) {
+        loadMoreTracksBtn.addEventListener('click', loadMorePopularTracks);
+    }
 });
 
 // Backup : initialiser si la page est déjà chargée
@@ -1539,6 +1838,15 @@ if (document.readyState === 'loading') {
         if (discogsTracklistBackBtn) {
             discogsTracklistBackBtn.addEventListener('click', navigateBackToDiscogsResults);
         }
+        if (popularBtn) {
+            popularBtn.addEventListener('click', handlePopularClick);
+        }
+        if (backToResultsBtn) {
+            backToResultsBtn.addEventListener('click', resetPopularMode);
+        }
+        if (loadMoreTracksBtn) {
+            loadMoreTracksBtn.addEventListener('click', loadMorePopularTracks);
+        }
     });
 } else {
     initializeApp();
@@ -1554,5 +1862,14 @@ if (document.readyState === 'loading') {
     }
     if (discogsTracklistBackBtn) {
         discogsTracklistBackBtn.addEventListener('click', navigateBackToDiscogsResults);
+    }
+    if (popularBtn) {
+        popularBtn.addEventListener('click', handlePopularClick);
+    }
+    if (backToResultsBtn) {
+        backToResultsBtn.addEventListener('click', resetPopularMode);
+    }
+    if (loadMoreTracksBtn) {
+        loadMoreTracksBtn.addEventListener('click', loadMorePopularTracks);
     }
 }
