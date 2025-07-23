@@ -15,7 +15,7 @@ let isPlaying = false;
 let userPlaylists = [];
 let trackToSave = null;
 let searchHistory = [];
-let currentTab = 'youtube';
+let currentPage = 'home';
 
 // Éléments du DOM
 const form = document.getElementById('playlistForm');
@@ -823,27 +823,31 @@ function handleDiscogsSearch(event) {
         });
 }
 
-// Gestion des onglets
-function initializeTabs() {
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
+// Gestion de la navigation sidebar
+function initializeNavigation() {
+    const navItems = document.querySelectorAll('.nav-item[data-page]');
+    const pages = document.querySelectorAll('.page-content');
 
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabId = button.getAttribute('data-tab');
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const pageId = item.getAttribute('data-page');
             
-            // Mettre à jour les boutons
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
+            // Mettre à jour les éléments de navigation
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
             
-            // Mettre à jour les contenus
-            tabContents.forEach(content => content.classList.remove('active'));
-            document.getElementById(`${tabId}-section`).classList.add('active');
+            // Mettre à jour les pages
+            pages.forEach(page => page.classList.remove('active'));
+            const targetPage = document.getElementById(`${pageId}-page`);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
             
             // Mettre à jour l'état actuel
-            currentTab = tabId;
+            currentPage = pageId;
             
-            console.log(`Onglet actif : ${tabId}`);
+            console.log(`Page active : ${pageId}`);
         });
     });
 }
@@ -851,7 +855,7 @@ function initializeTabs() {
 // Initialiser l'application quand la page est chargée
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
-    initializeTabs();
+    initializeNavigation();
     
     // Event listener pour Discogs
     if (discogsSearchForm) {
@@ -863,14 +867,14 @@ document.addEventListener('DOMContentLoaded', () => {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         initializeApp();
-        initializeTabs();
+        initializeNavigation();
         if (discogsSearchForm) {
             discogsSearchForm.addEventListener('submit', handleDiscogsSearch);
         }
     });
 } else {
     initializeApp();
-    initializeTabs();
+    initializeNavigation();
     if (discogsSearchForm) {
         discogsSearchForm.addEventListener('submit', handleDiscogsSearch);
     }

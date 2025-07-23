@@ -99,59 +99,13 @@ body {
     padding: 40px;
     overflow-y: auto;
 
-/* Système d'onglets */
-.tabs-container {
-    margin-bottom: 32px;
-}
-
-.tab-buttons {
-    display: flex;
-    gap: 2px;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 4px;
-    width: fit-content;
-}
-
-.tab-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
-    background: transparent;
-    border: none;
-    color: var(--text-color-light);
-    font-family: var(--font-family);
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    white-space: nowrap;
-}
-
-.tab-btn:hover {
-    color: var(--text-color);
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.tab-btn.active {
-    background-color: var(--accent-color);
-    color: #ffffff;
-    font-weight: 600;
-}
-
-.tab-btn i {
-    font-size: 16px;
-}
-
-/* Contenu des onglets */
-.tab-content {
+/* Navigation par pages */
+.page-content {
     display: none;
     animation: fadeIn 0.3s ease-in-out;
 }
 
-.tab-content.active {
+.page-content.active {
     display: block;
 }
 

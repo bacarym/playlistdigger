@@ -17,9 +17,10 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="#" class="active"><i class="fas fa-home"></i> <span>Accueil</span></a></li>
-                    <li><a href="#"><i class="fas fa-search"></i> <span>Rechercher</span></a></li>
-                    <li><a href="#"><i class="fas fa-book-open"></i> <span>Votre Bibliothèque</span></a></li>
+                    <li><a href="#" class="nav-item active" data-page="home"><i class="fas fa-home"></i> <span>Accueil</span></a></li>
+                    <li><a href="#" class="nav-item" data-page="discogs"><i class="fas fa-compact-disc"></i> <span>Discogs</span></a></li>
+                    <li><a href="#" class="nav-item"><i class="fas fa-search"></i> <span>Rechercher</span></a></li>
+                    <li><a href="#" class="nav-item"><i class="fas fa-book-open"></i> <span>Votre Bibliothèque</span></a></li>
                 </ul>
             </nav>
             <div class="sidebar-actions">
@@ -31,22 +32,8 @@
         </aside>
 
         <main class="main-content">
-            <!-- Système d'onglets -->
-            <div class="tabs-container">
-                <div class="tab-buttons">
-                    <button class="tab-btn active" data-tab="youtube">
-                        <i class="fab fa-youtube"></i>
-                        YouTube
-                    </button>
-                    <button class="tab-btn" data-tab="discogs">
-                        <i class="fas fa-compact-disc"></i>
-                        Discogs
-                    </button>
-                </div>
-            </div>
-
-            <!-- Section YouTube -->
-            <div id="youtube-section" class="tab-content active">
+            <!-- Page d'accueil -->
+            <div id="home-page" class="page-content active">
                 <header class="main-header">
                     <h2>Générer une Playlist YouTube</h2>
                     <p>Collez l'URL d'une chaîne pour créer une playlist triée par popularité.</p>
@@ -122,8 +109,8 @@
                 </div>
             </div>
 
-            <!-- Section Discogs -->
-            <div id="discogs-section" class="tab-content">
+            <!-- Page Discogs -->
+            <div id="discogs-page" class="page-content">
                 <div class="discogs-search-container">
                     <div class="discogs-search-header">
                         <h1>Rechercher sur Discogs</h1>
@@ -204,6 +191,6 @@
     </div>
     
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="script.js?v=1.8"></script>
+    <script src="script.js?v=1.9"></script>
 </body>
 </html> 
