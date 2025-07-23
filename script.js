@@ -828,6 +828,13 @@ function initializeNavigation() {
     const navItems = document.querySelectorAll('.nav-item[data-page]');
     const pages = document.querySelectorAll('.page-content');
 
+    // S'assurer que seule la page d'accueil est visible au démarrage
+    pages.forEach(page => page.classList.remove('active'));
+    const homePage = document.getElementById('home-page');
+    if (homePage) {
+        homePage.classList.add('active');
+    }
+
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
