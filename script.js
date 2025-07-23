@@ -90,32 +90,64 @@ const progressBarWrapper = document.querySelector('.progress-bar-wrapper');
 // --- Initialisation du lecteur YouTube ---
 function onYouTubeIframeAPIReady() {
     const currentOrigin = window.location.origin;
-    console.log("Initialisation du lecteur YouTube depuis l'origine :", currentOrigin);
+    console.log("✅ API YouTube chargée ! Initialisation du lecteur depuis :", currentOrigin);
 
-    player = new YT.Player('youtube-player-container', {
-        height: '1',
-        width: '1',
-        playerVars: {
-            'playsinline': 1,
-            'origin': currentOrigin
-        },
-        events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
-        }
-    });
+    try {
+        player = new YT.Player('youtube-player-container', {
+            height: '1',
+            width: '1',
+            playerVars: {
+                'playsinline': 1,
+                'origin': currentOrigin,
+                'enablejsapi': 1,
+                'rel': 0
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange,
+                'onError': onPlayerError
+            }
+        });
+        console.log("✅ Player YouTube créé avec succès");
+    } catch (error) {
+        console.error("❌ Erreur lors de la création du player:", error);
+    }
+}
+
+function onPlayerError(event) {
+    console.error("❌ Erreur du player YouTube:", event.data);
 }
 
 function onPlayerReady(event) {
-    console.log("Lecteur YouTube prêt.");
+    console.log("✅ Lecteur YouTube prêt et opérationnel !");
+    console.log("✅ Player state:", player.getPlayerState());
+    console.log("✅ Player methods available:", {
+        loadVideoById: typeof player.loadVideoById,
+        playVideo: typeof player.playVideo,
+        pauseVideo: typeof player.pauseVideo,
+        getPlayerState: typeof player.getPlayerState
+    });
 }
 
 // Vérifier si le player est prêt
 function isPlayerReady() {
-    return player && 
+    const ready = player && 
            player.loadVideoById && 
            player.getPlayerState && 
            typeof player.getPlayerState === 'function';
+           
+    if (!ready) {
+        console.log("🔍 Diagnostic player:", {
+            playerExists: !!player,
+            loadVideoById: !!(player && player.loadVideoById),
+            getPlayerState: !!(player && player.getPlayerState),
+            getPlayerStateType: player && typeof player.getPlayerState,
+            YTAvailable: typeof YT !== 'undefined',
+            YTPlayerAvailable: typeof YT !== 'undefined' && !!YT.Player
+        });
+    }
+    
+    return ready;
 }
 
 // Attendre que le player soit prêt
@@ -755,6 +787,49 @@ function initializeApp() {
     } else {
         console.error("INIT : localStorage n'est pas disponible");
     }
+    
+    // Vérifier si l'API YouTube est chargée
+    initializeYouTubePlayer();
+}
+
+// Initialiser le player YouTube
+function initializeYouTubePlayer() {
+    console.log("🎵 Vérification de l'API YouTube...");
+    
+    if (typeof YT !== 'undefined' && YT.Player) {
+        console.log("✅ API YouTube déjà disponible");
+        if (!player) {
+            onYouTubeIframeAPIReady();
+        }
+    } else {
+        console.log("⏳ API YouTube pas encore chargée, tentative d'initialisation...");
+        
+        // Attendre que l'API se charge
+        let attempts = 0;
+        const checkYTAPI = () => {
+            attempts++;
+            if (typeof YT !== 'undefined' && YT.Player) {
+                console.log("✅ API YouTube chargée après", attempts, "tentatives");
+                if (!player) {
+                    onYouTubeIframeAPIReady();
+                }
+            } else if (attempts < 20) {
+                console.log("⏳ Tentative", attempts, "- API YouTube pas encore prête");
+                setTimeout(checkYTAPI, 500);
+            } else {
+                console.error("❌ API YouTube non disponible après 20 tentatives");
+                // Essayer de recharger le script
+                console.log("🔄 Tentative de rechargement du script YouTube...");
+                const script = document.createElement('script');
+                script.src = 'https://www.youtube.com/iframe_api';
+                script.onload = () => console.log("📜 Script YouTube rechargé");
+                script.onerror = () => console.error("❌ Erreur lors du rechargement du script YouTube");
+                document.head.appendChild(script);
+            }
+        };
+        
+        checkYTAPI();
+    }
 }
 
 // --- Fonctionnalités Discogs ---
@@ -1074,27 +1149,45 @@ function playTrackFromTracklist(track, index, artistName) {
     isPlayingFromTracklist = true;
     currentTrackIndex = index;
     
+    // Vérifier si le player existe, sinon l'initialiser
+    if (!player) {
+        console.log("🔄 Player non initialisé, tentative d'initialisation...");
+        initializeYouTubePlayer();
+    }
+    
     // Attendre que le player soit prêt et lancer la vidéo
     waitForPlayer(() => {
         try {
-            console.log('Chargement de la vidéo YouTube:', track.youtubeData.id);
+            console.log('🎵 Chargement de la vidéo YouTube:', track.youtubeData.id);
             player.loadVideoById(track.youtubeData.id);
             
             // Vérifier après un délai si la lecture a commencé
             setTimeout(() => {
-                if (player.getPlayerState() === YT.PlayerState.PLAYING || 
-                    player.getPlayerState() === YT.PlayerState.BUFFERING) {
-                    console.log('Lecture démarrée avec succès');
-                } else {
-                    console.log('Tentative de forcer la lecture...');
-                    player.playVideo();
+                try {
+                    const state = player.getPlayerState();
+                    console.log('🎵 Player state après chargement:', state);
+                    
+                    if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING) {
+                        console.log('✅ Lecture démarrée avec succès');
+                    } else {
+                        console.log('🔄 Tentative de forcer la lecture...');
+                        player.playVideo();
+                        
+                        // Vérifier encore après
+                        setTimeout(() => {
+                            const newState = player.getPlayerState();
+                            console.log('🎵 Player state après playVideo():', newState);
+                        }, 1000);
+                    }
+                } catch (stateError) {
+                    console.error('❌ Erreur lors de la vérification du state:', stateError);
                 }
-            }, 1000);
+            }, 1500);
             
         } catch (error) {
-            console.error('Erreur lors du chargement de la vidéo:', error);
+            console.error('❌ Erreur lors du chargement de la vidéo:', error);
         }
-    });
+    }, 15); // Augmenter le nombre de tentatives
 }
 
 // Navigation Discogs
