@@ -954,6 +954,10 @@ function createTracklistElement(track, index, artistName) {
         parseInt(track.youtubeData.viewCount).toLocaleString() : 
         'N/A';
     
+    // Nettoyer et formater la durée
+    const duration = track.duration || '';
+    const cleanDuration = duration.toString().replace(/[^\d:]/g, '');
+    
     div.innerHTML = `
         <div class="track-number">${track.position}</div>
         <div class="track-title">
@@ -962,7 +966,7 @@ function createTracklistElement(track, index, artistName) {
                 ${hasYouTube ? `<div class="track-source">Trouvé sur YouTube</div>` : `<div class="track-source no-source">Non trouvé sur YouTube</div>`}
             </div>
         </div>
-        <div class="track-duration">${track.duration}</div>
+        <div class="track-duration">${cleanDuration}</div>
         <div class="track-plays">${viewCount}</div>
         <div class="track-actions">
             ${playButton}
@@ -971,7 +975,7 @@ function createTracklistElement(track, index, artistName) {
                 title: track.title,
                 artist: artistName,
                 thumbnail: hasYouTube ? track.youtubeData.thumbnail : 'https://via.placeholder.com/120'
-            })}'>
+            }).replace(/"/g, '&quot;')}'>
                 <i class="fas fa-plus"></i>
             </button>
         </div>
