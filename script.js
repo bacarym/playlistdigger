@@ -17,6 +17,8 @@ let trackToSave = null;
 let searchHistory = [];
 let currentPage = 'home';
 let discogsSearchHistory = [];
+let currentTracklistTracks = [];
+let isPlayingFromTracklist = false;
 
 // Éléments du DOM
 const form = document.getElementById('playlistForm');
@@ -108,13 +110,49 @@ function onPlayerReady(event) {
     console.log("Lecteur YouTube prêt.");
 }
 
+// Vérifier si le player est prêt
+function isPlayerReady() {
+    return player && 
+           player.loadVideoById && 
+           player.getPlayerState && 
+           typeof player.getPlayerState === 'function';
+}
+
+// Attendre que le player soit prêt
+function waitForPlayer(callback, maxAttempts = 10) {
+    let attempts = 0;
+    
+    const checkPlayer = () => {
+        attempts++;
+        if (isPlayerReady()) {
+            console.log('Player prêt après', attempts, 'tentatives');
+            callback();
+        } else if (attempts < maxAttempts) {
+            console.log('Player pas encore prêt, tentative', attempts);
+            setTimeout(checkPlayer, 500);
+        } else {
+            console.error('Player non disponible après', maxAttempts, 'tentatives');
+        }
+    };
+    
+    checkPlayer();
+}
+
 function onPlayerStateChange(event) {
     if (event.data === YT.PlayerState.PLAYING) {
         isPlaying = true;
         updatePlayPauseButton();
         startProgressTracking();
-        updateNowPlayingUI(currentPlaylist[currentTrackIndex]);
-        highlightCurrentTrack();
+        
+        // Gérer différemment selon la source de lecture
+        if (isPlayingFromTracklist && currentTracklistTracks[currentTrackIndex]) {
+            const currentTrack = currentTracklistTracks[currentTrackIndex];
+            console.log('Lecture depuis tracklist:', currentTrack.title);
+            // Pas besoin d'updateNowPlayingUI car les infos sont déjà dans le player
+        } else if (currentPlaylist[currentTrackIndex]) {
+            updateNowPlayingUI(currentPlaylist[currentTrackIndex]);
+            highlightCurrentTrack();
+        }
     } else if (event.data === YT.PlayerState.PAUSED) {
         isPlaying = false;
         updatePlayPauseButton();
@@ -916,6 +954,9 @@ async function processDiscogsRelease(releaseData) {
 
 // Afficher la tracklist
 function displayTracklist(releaseData, processedTracks) {
+    // Sauvegarder les tracks pour la lecture
+    currentTracklistTracks = processedTracks;
+    
     // Mettre à jour les informations de l'album
     tracklistTitle.textContent = releaseData.title || 'Titre inconnu';
     tracklistArtist.textContent = releaseData.artists?.[0]?.name || 'Artiste inconnu';
@@ -984,38 +1025,76 @@ function createTracklistElement(track, index, artistName) {
     // Event listeners pour les boutons
     if (hasYouTube) {
         const playBtn = div.querySelector('.play-btn');
-        playBtn.addEventListener('click', () => {
-            playTrackFromTracklist(track, index, artistName);
-        });
+        if (playBtn) {
+            playBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Clic sur bouton play, track:', track.title);
+                playTrackFromTracklist(track, index, artistName);
+            });
+        } else {
+            console.error('Bouton play non trouvé dans le DOM');
+        }
     }
     
     const saveBtn = div.querySelector('.save-track-btn');
-    saveBtn.addEventListener('click', (e) => {
-        const trackData = JSON.parse(e.target.closest('.save-track-btn').dataset.track);
-        if (trackData.id) {
-            trackToSave = trackData;
-            showSaveToPlaylistModal();
-        }
-    });
+    if (saveBtn) {
+        saveBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Clic sur bouton save, track:', track.title);
+            const trackData = JSON.parse(e.target.closest('.save-track-btn').dataset.track);
+            if (trackData.id) {
+                trackToSave = trackData;
+                showSaveToPlaylistModal();
+            }
+        });
+    } else {
+        console.error('Bouton save non trouvé dans le DOM');
+    }
     
     return div;
 }
 
 // Jouer une track depuis la tracklist
 function playTrackFromTracklist(track, index, artistName) {
-    if (!track.youtubeData) return;
+    if (!track.youtubeData) {
+        console.log('Aucune donnée YouTube pour cette track');
+        return;
+    }
+    
+    console.log('Lecture de la track:', track.title, 'ID YouTube:', track.youtubeData.id);
     
     // Mettre à jour les informations du lecteur
     playerThumbnail.src = track.youtubeData.thumbnail;
     playerTitle.textContent = track.title;
     playerArtist.textContent = artistName || tracklistArtist.textContent;
     
-    // Jouer la vidéo
-    if (player && player.loadVideoById) {
-        player.loadVideoById(track.youtubeData.id);
-        currentTrackIndex = index;
-        // Note: currentPlaylist pourrait être adapté pour la tracklist
-    }
+    // Marquer qu'on joue depuis la tracklist
+    isPlayingFromTracklist = true;
+    currentTrackIndex = index;
+    
+    // Attendre que le player soit prêt et lancer la vidéo
+    waitForPlayer(() => {
+        try {
+            console.log('Chargement de la vidéo YouTube:', track.youtubeData.id);
+            player.loadVideoById(track.youtubeData.id);
+            
+            // Vérifier après un délai si la lecture a commencé
+            setTimeout(() => {
+                if (player.getPlayerState() === YT.PlayerState.PLAYING || 
+                    player.getPlayerState() === YT.PlayerState.BUFFERING) {
+                    console.log('Lecture démarrée avec succès');
+                } else {
+                    console.log('Tentative de forcer la lecture...');
+                    player.playVideo();
+                }
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Erreur lors du chargement de la vidéo:', error);
+        }
+    });
 }
 
 // Navigation Discogs
