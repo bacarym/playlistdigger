@@ -305,6 +305,140 @@ body {
     color: var(--text-color-light);
     font-size: 16px;
 }
+
+/* Historique des recherches Discogs */
+.discogs-history-container {
+    margin-top: 60px;
+    max-width: 800px;
+    width: 100%;
+}
+
+.discogs-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 8px;
+}
+
+.discogs-history-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.discogs-history-header h3 i {
+    color: var(--accent-color);
+}
+
+.discogs-history {
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.discogs-history .history-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.discogs-history .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.discogs-history .history-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.discogs-history .history-item:last-child {
+    border-bottom: none;
+}
+
+.history-query {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.query-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.query-date {
+    font-size: 12px;
+    color: var(--text-color-disabled);
+}
+
+.history-empty {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.history-empty p {
+    color: var(--text-color-light);
+    font-size: 16px;
+}
+
+/* Page de résultats Discogs */
+.results-page-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-color);
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-family);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.back-button:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.results-info h2 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 4px;
+}
+
+.results-info .results-count {
+    font-size: 16px;
+    color: var(--text-color-light);
+    font-weight: 500;
+}
+
+.discogs-results-container {
+    max-width: 1000px;
+    width: 100%;
+}
     grid-row: 1 / 2;
 }
 

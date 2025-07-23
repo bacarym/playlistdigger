@@ -6,7 +6,7 @@
     <title>MelodyMix - Générateur de Playlist</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=2.0">
+    <link rel="stylesheet" href="style.css?v=2.1">
 </head>
 <body>
     <div class="app-container">
@@ -109,7 +109,7 @@
                 </div>
             </div>
 
-            <!-- Page Discogs -->
+            <!-- Page Discogs - Recherche -->
             <div id="discogs-page" class="page-content">
                 <div class="discogs-search-container">
                     <div class="discogs-search-header">
@@ -129,14 +129,39 @@
                     </form>
                     
                     <div id="discogsError" class="error-message hidden"></div>
+
+                    <!-- Historique des recherches Discogs -->
+                    <div class="discogs-history-container">
+                        <div class="discogs-history-header">
+                            <h3><i class="fas fa-history"></i> Historique des recherches</h3>
+                            <button id="clearDiscogsHistoryBtn" class="clear-history-btn">
+                                <i class="fas fa-trash"></i>
+                                Effacer l'historique
+                            </button>
+                        </div>
+                        <div id="discogsSearchHistory" class="discogs-history">
+                            <div class="history-list" id="discogsHistoryList">
+                                <!-- L'historique Discogs apparaît ici -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Discogs - Résultats -->
+            <div id="discogs-results-page" class="page-content">
+                <div class="results-page-header">
+                    <button id="discogs-back-btn" class="back-button">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour à la recherche
+                    </button>
+                    <div class="results-info">
+                        <h2 id="discogsResultsPageTitle">Résultats de recherche</h2>
+                        <span id="discogsResultsPageCount" class="results-count"></span>
+                    </div>
                 </div>
 
-                <!-- Résultats Discogs -->
-                <div id="discogsResults" class="discogs-results hidden">
-                    <div class="results-header">
-                        <h3 id="discogsResultsTitle">Résultats de recherche</h3>
-                        <span id="discogsResultsCount" class="results-count"></span>
-                    </div>
+                <div id="discogsResultsContainer" class="discogs-results-container">
                     <div id="discogsTracksList" class="tracks-list">
                         <!-- Les résultats apparaissent ici -->
                     </div>
@@ -191,6 +216,6 @@
     </div>
     
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="script.js?v=2.0"></script>
+    <script src="script.js?v=2.1"></script>
 </body>
 </html> 
