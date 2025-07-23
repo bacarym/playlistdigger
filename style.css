@@ -1,0 +1,812 @@
+/* Réinitialisation et variables - Design System Apple Music */
+:root {
+    --bg-color: #0d0d0d;
+    --sidebar-bg: #000000;
+    --main-bg: #0d0d0d;
+    --card-bg: rgba(20, 20, 20, 0.9);
+    --text-color: #ffffff;
+    --text-color-light: #c0c0c0;
+    --text-color-disabled: #808080;
+    --accent-color: #ff7043;
+    --accent-color-hover: #ff5722;
+    --button-bg: #ff7043;
+    --button-hover: #ff5722;
+    --shadow-soft: 0 2px 8px 12px rgba(0, 0, 0, 0.4);
+    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    overflow: hidden;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.app-container {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: 1fr auto;
+    height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: var(--sidebar-bg);
+    padding: 24px;
+    grid-row: 1 / 2;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.sidebar-logo i {
+    font-size: 28px;
+    color: var(--accent-color);
+}
+
+.sidebar-logo h1 {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+}
+
+.sidebar-nav li a {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.01em;
+    padding: 12px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.sidebar-nav li a:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-nav li a.active {
+    color: var(--accent-color);
+    background-color: rgba(255, 112, 67, 0.1);
+}
+
+/* Main Content */
+.main-content {
+    background-color: var(--main-bg);
+    padding: 40px;
+    overflow-y: auto;
+    grid-row: 1 / 2;
+}
+
+.main-header {
+    margin-bottom: 32px;
+}
+
+.main-header h2 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.2;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.main-header p {
+    color: var(--text-color-light);
+    font-size: 16px;
+    line-height: 1.4;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+/* Formulaire */
+.form-container {
+    background-color: var(--card-bg);
+    padding: 24px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(10px);
+}
+
+#playlistForm {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.input-group {
+    flex: 1;
+    position: relative;
+}
+
+.input-group i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-color-light);
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 12px 12px 12px 48px;
+    background-color: #333;
+    border: 1px solid #535353;
+    color: var(--text-color);
+    border-radius: 8px;
+    font-family: var(--font-family);
+    font-size: 14px;
+}
+
+#generateBtn {
+    padding: 12px 24px;
+    background-color: var(--button-bg);
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#generateBtn:hover {
+    background-color: var(--button-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 112, 67, 0.3);
+}
+
+#generateBtn:active {
+    transform: translateY(0);
+}
+
+#generateBtn:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* Vue de la Playlist */
+.playlist-view {
+    padding: 24px;
+    background: linear-gradient(to bottom, #2a2a2a, var(--main-bg) 70%);
+    border-radius: 12px;
+}
+
+.playlist-header {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.playlist-header img {
+    width: 180px;
+    height: 180px;
+    border-radius: 8px;
+    box-shadow: 0 4px 60px rgba(0,0,0,0.5);
+}
+
+.playlist-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.playlist-details span {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.playlist-details h1 {
+    font-size: 48px;
+    margin: 8px 0;
+}
+
+.playlist-details p {
+    color: var(--text-color-light);
+    font-size: 14px;
+}
+
+.playlist-stats {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Historique des recherches */
+.search-history-container {
+    background: var(--card-bg);
+    border-radius: 20px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(10px);
+}
+
+.search-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-history-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.search-history {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-list {
+    padding: 0;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border-radius: 12px;
+    margin: 0 8px;
+    min-height: 44px;
+}
+
+.history-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-item-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.history-item-thumbnail {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.history-item-details {
+    flex: 1;
+}
+
+.history-item-title {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.history-item-meta {
+    font-size: 12px;
+    color: var(--text-color-light);
+    line-height: 1.4;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.history-item-date {
+    font-size: 12px;
+    color: var(--text-color-light);
+    white-space: nowrap;
+}
+
+.clear-history-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-color-light);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease-in-out;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    min-height: 44px;
+}
+
+.clear-history-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    transform: translateY(-2px);
+}
+
+.clear-history-btn:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+.history-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-color-light);
+}
+
+.history-empty i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* Tableau de la playlist */
+.playlist-table .table-header,
+.playlist-table .video-item {
+    display: grid;
+    grid-template-columns: 30px 1fr 100px 100px 50px;
+    gap: 16px;
+    padding: 12px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.playlist-table .table-header {
+    color: var(--text-color-light);
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.video-item {
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.video-item:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.video-item.playing {
+    background-color: var(--accent-color);
+    color: var(--bg-color);
+}
+
+.video-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.video-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+}
+
+.video-title {
+    font-weight: 500;
+}
+
+.video-artist {
+    font-size: 12px;
+    color: var(--text-color-light);
+}
+
+.video-item.playing .video-artist {
+    color: #e0e0e0;
+}
+
+.track-number {
+    text-align: center;
+    color: var(--text-color-light);
+}
+
+.track-number .play-icon-hover {
+    display: none;
+}
+
+.video-item:hover .track-number .track-index {
+    display: none;
+}
+
+.video-item:hover .track-number .play-icon-hover {
+    display: inline-block;
+    color: var(--text-color);
+}
+
+.video-item.playing .track-number .track-index,
+.video-item.playing:hover .track-number .track-index {
+    display: none;
+}
+
+.video-item.playing .track-number::before {
+    font-family: "Font Awesome 6 Free";
+    content: "\f028"; /* volume-high icon */
+    font-weight: 900;
+    color: var(--accent-color);
+}
+
+.track-actions .like-btn {
+    background: none;
+    border: none;
+    color: var(--text-color-light);
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.track-actions .like-btn:hover {
+    opacity: 1;
+    color: var(--text-color);
+}
+
+.track-actions .like-btn.liked {
+    color: var(--accent-color);
+    opacity: 1;
+}
+
+/* Sidebar Playlists */
+.sidebar-actions button {
+    background: var(--card-bg);
+    color: var(--text-color-light);
+    border: none;
+    padding: 10px;
+    width: 100%;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: background-color 0.3s;
+}
+
+.sidebar-actions button:hover {
+    background: #333;
+}
+
+.sidebar-actions button i {
+    margin-right: 10px;
+}
+
+#user-playlists .playlist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#user-playlists .playlist-item:hover {
+    background-color: var(--card-bg);
+}
+
+#user-playlists .playlist-item img {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+}
+
+#user-playlists .playlist-info .name {
+    font-weight: 500;
+}
+
+#user-playlists .playlist-info .count {
+    font-size: 12px;
+    color: var(--text-color-light);
+}
+
+/* Modale */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: var(--text-color-light);
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.modal-content h2 {
+    margin-bottom: 16px;
+}
+
+#modal-playlist-list {
+    list-style: none;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+#modal-playlist-list li {
+    padding: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+#modal-playlist-list li:hover {
+    background-color: #333;
+}
+
+.modal-new-playlist {
+    display: flex;
+    gap: 8px;
+}
+
+.modal-new-playlist input {
+    flex: 1;
+    padding: 12px;
+    background-color: #333;
+    border: 1px solid #535353;
+    color: var(--text-color);
+    border-radius: 8px;
+}
+
+.modal-new-playlist button {
+    padding: 12px;
+    background: var(--accent-color);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Lecteur en bas */
+.player-bar {
+    background-color: var(--player-bg);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 12px 24px;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr;
+    align-items: center;
+    grid-column: 1 / 3;
+    z-index: 10;
+    backdrop-filter: blur(20px);
+}
+
+.player-song-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.player-song-info img {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+}
+
+.player-song-details #player-title {
+    font-weight: 600;
+    font-size: 14px;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.player-song-details #player-artist {
+    font-size: 12px;
+    color: var(--text-color-light);
+    line-height: 1.4;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.player-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-buttons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.player-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    padding: 8px;
+    border-radius: 50%;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-btn:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.player-btn:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+.play-pause-btn {
+    background-color: var(--accent-color);
+    color: #ffffff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    transition: all 0.2s ease-in-out;
+}
+
+.play-pause-btn:hover {
+    background-color: var(--accent-color-hover);
+    transform: scale(1.05);
+}
+
+.progress-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-color-light);
+}
+
+.progress-bar-wrapper {
+    flex: 1;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.progress-bar-wrapper:hover {
+    height: 6px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0;
+    background-color: var(--accent-color);
+    border-radius: 2px;
+    transition: width 0.1s ease-out;
+}
+
+.player-extra-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    font-size: 16px;
+}
+
+/* Utilitaires */
+.hidden {
+    display: none !important;
+}
+
+#youtube-player-container {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+}
+.error-message {
+    background-color: #e53935;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 16px;
+}
+.youtube-btn {
+    background: transparent;
+    border: 1px solid var(--text-color-light);
+    color: var(--text-color-light);
+    padding: 8px 16px;
+    border-radius: 25px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.youtube-btn:hover {
+    background: var(--text-color);
+    color: var(--bg-color);
+    border-color: var(--text-color);
+}
+.video-item .track-number {
+    color: var(--text-color-light);
+}
+
+.video-item.playing .track-number {
+    color: var(--accent-color);
+}
+/* Styles pour la barre de défilement */
+.main-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track {
+    background: var(--main-bg);
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background: #535353;
+    border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+    background: #6b6b6b;
+} 

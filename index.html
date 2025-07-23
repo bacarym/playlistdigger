@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MelodyMix - Générateur de Playlist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fas fa-headphones-alt"></i>
+                <h1>MelodyMix</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#" class="active"><i class="fas fa-home"></i> <span>Accueil</span></a></li>
+                    <li><a href="#"><i class="fas fa-search"></i> <span>Rechercher</span></a></li>
+                    <li><a href="#"><i class="fas fa-book-open"></i> <span>Votre Bibliothèque</span></a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-actions">
+                <button id="createPlaylistBtn"><i class="fas fa-plus"></i> Créer une playlist</button>
+            </div>
+            <div class="sidebar-playlist" id="user-playlists">
+                <!-- Les playlists de l'utilisateur apparaissent ici -->
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h2>Générer une Playlist YouTube</h2>
+                <p>Collez l'URL d'une chaîne pour créer une playlist triée par popularité.</p>
+            </header>
+
+            <div class="form-container">
+                <form id="playlistForm">
+                    <div class="input-group">
+                        <i class="fab fa-youtube"></i>
+                        <input type="url" id="channelUrl" placeholder="URL de la chaîne YouTube" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-list-ol"></i>
+                        <select id="videoCount">
+                            <option value="10">10 vidéos</option>
+                            <option value="25" selected>25 vidéos</option>
+                            <option value="50">50 vidéos</option>
+                            <option value="100">100 vidéos</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="generateBtn">
+                        <span id="btnText">Générer</span>
+                        <span id="loading" class="hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </form>
+            </div>
+            <div id="error" class="error-message hidden"></div>
+
+            <!-- Historique des recherches -->
+            <div class="search-history-container">
+                <div class="search-history-header">
+                    <h3><i class="fas fa-history"></i> Historique des recherches</h3>
+                    <button id="clearHistoryBtn" class="clear-history-btn">
+                        <i class="fas fa-trash"></i>
+                        Effacer l'historique
+                    </button>
+                </div>
+                <div id="searchHistory" class="search-history">
+                    <div class="history-list" id="historyList">
+                        <!-- L'historique apparaît ici -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="playlistContainer" class="playlist-view hidden">
+                <div class="playlist-header">
+                    <img id="channelThumbnail" src="https://via.placeholder.com/150" alt="Channel thumbnail">
+                    <div class="playlist-details">
+                        <span>Playlist</span>
+                        <h1 id="channelName">Nom de la chaîne</h1>
+                        <p id="channelDescription">Description de la playlist...</p>
+                        <div class="playlist-stats">
+                            <span id="videoCountInfo"></span>
+                            <button id="openYouTubeBtn" class="youtube-btn">
+                                <i class="fab fa-youtube"></i> Ouvrir sur YouTube
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="playlist-table">
+                    <div class="table-header">
+                        <div class="track-number">#</div>
+                        <div class="track-title">Titre</div>
+                        <div class="track-plays">Lectures</div>
+                        <div class="track-likes">Likes</div>
+                        <div class="track-actions"></div>
+                    </div>
+                    <div id="playlist" class="table-body">
+                        <!-- Les vidéos apparaissent ici -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="player-bar">
+            <div class="player-song-info">
+                <img id="player-thumbnail" src="https://via.placeholder.com/64" alt="Now playing">
+                <div class="player-song-details">
+                    <div id="player-title">Aucune lecture</div>
+                    <div id="player-artist">Veuillez sélectionner une piste</div>
+                </div>
+            </div>
+            <div class="player-controls">
+                <div class="control-buttons">
+                    <button class="player-btn"><i class="fas fa-step-backward"></i></button>
+                    <button class="player-btn play-pause-btn" id="playPauseBtn"><i class="fas fa-play"></i></button>
+                    <button class="player-btn"><i class="fas fa-step-forward"></i></button>
+                </div>
+                <div class="progress-container">
+                    <span id="currentTime">0:00</span>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <span id="totalDuration">0:00</span>
+                </div>
+            </div>
+            <div class="player-extra-controls">
+                <i class="fas fa-volume-up"></i>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Conteneur pour le lecteur YouTube masqué -->
+    <div id="youtube-player-container"></div>
+
+    <!-- Modale pour sauvegarder la piste -->
+    <div id="saveToPlaylistModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Sauvegarder dans...</h2>
+            <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+            <ul id="modal-playlist-list">
+                <!-- Liste des playlists pour la sélection -->
+            </ul>
+            <div class="modal-new-playlist">
+                <input type="text" id="newPlaylistName" placeholder="...ou créer une nouvelle playlist">
+                <button id="confirmNewPlaylistBtn">Créer et sauvegarder</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="script.js?v=1.5"></script>
+</body>
+</html> 

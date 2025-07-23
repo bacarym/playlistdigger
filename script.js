@@ -1,0 +1,693 @@
+// Clé API YouTube (à garder sécurisée côté serveur dans une vraie app)
+const API_KEY = 'AIzaSyBmUM8idf3U-J-4GHeL5rCRPNsV56qshFg';
+const API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
+
+// État de l'application
+let player;
+let currentPlaylist = [];
+let currentTrackIndex = -1;
+let progressInterval;
+let isPlaying = false;
+let userPlaylists = [];
+let trackToSave = null;
+let searchHistory = [];
+
+// Éléments du DOM
+const form = document.getElementById('playlistForm');
+const channelUrlInput = document.getElementById('channelUrl');
+const videoCountSelect = document.getElementById('videoCount');
+const generateBtn = document.getElementById('generateBtn');
+const btnText = document.getElementById('btnText');
+const loadingSpinner = document.getElementById('loading');
+const errorDiv = document.getElementById('error');
+const playlistContainer = document.getElementById('playlistContainer');
+const channelNameH1 = document.getElementById('channelName');
+const channelThumbnailImg = document.getElementById('channelThumbnail');
+const videoCountInfoSpan = document.getElementById('videoCountInfo');
+const playlistDiv = document.getElementById('playlist');
+const openYouTubeBtn = document.getElementById('openYouTubeBtn');
+const createPlaylistBtn = document.getElementById('createPlaylistBtn');
+const userPlaylistsDiv = document.getElementById('user-playlists');
+const saveToPlaylistModal = document.getElementById('saveToPlaylistModal');
+const modalCloseBtn = document.querySelector('.modal-close-btn');
+const modalPlaylistList = document.getElementById('modal-playlist-list');
+const newPlaylistNameInput = document.getElementById('newPlaylistName');
+const confirmNewPlaylistBtn = document.getElementById('confirmNewPlaylistBtn');
+
+// Éléments de l'historique
+const searchHistoryDiv = document.getElementById('searchHistory');
+const historyList = document.getElementById('historyList');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+// Éléments du lecteur
+const playerBar = document.querySelector('.player-bar');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const playerThumbnail = document.getElementById('player-thumbnail');
+const playerTitle = document.getElementById('player-title');
+const playerArtist = document.getElementById('player-artist');
+const currentTimeSpan = document.getElementById('currentTime');
+const totalDurationSpan = document.getElementById('totalDuration');
+const progressBar = document.getElementById('progressBar');
+const progressBarWrapper = document.querySelector('.progress-bar-wrapper');
+
+
+// --- Initialisation du lecteur YouTube ---
+function onYouTubeIframeAPIReady() {
+    const currentOrigin = window.location.origin;
+    console.log("Initialisation du lecteur YouTube depuis l'origine :", currentOrigin);
+
+    player = new YT.Player('youtube-player-container', {
+        height: '1',
+        width: '1',
+        playerVars: {
+            'playsinline': 1,
+            'origin': currentOrigin
+        },
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    console.log("Lecteur YouTube prêt.");
+}
+
+function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.PLAYING) {
+        isPlaying = true;
+        updatePlayPauseButton();
+        startProgressTracking();
+        updateNowPlayingUI(currentPlaylist[currentTrackIndex]);
+        highlightCurrentTrack();
+    } else if (event.data === YT.PlayerState.PAUSED) {
+        isPlaying = false;
+        updatePlayPauseButton();
+        clearInterval(progressInterval);
+    } else if (event.data === YT.PlayerState.ENDED) {
+        playNextTrack();
+    }
+}
+
+// --- Fonctions de l'API YouTube ---
+async function fetchChannelId(handle) {
+    let url = `${API_BASE_URL}/channels?key=${API_KEY}&part=id`;
+    if (handle.startsWith('@')) {
+        url += `&forHandle=${handle.substring(1)}`;
+    } else {
+         url += `&forUsername=${handle}`;
+    }
+    
+    // Fallback à la recherche si non trouvé
+    const searchUrl = `${API_BASE_URL}/search?q=${encodeURIComponent(handle)}&type=channel&key=${API_KEY}&part=snippet&maxResults=1`;
+
+    try {
+        let response = await fetch(url);
+        let data = await response.json();
+        if (data.items && data.items.length > 0) return data.items[0].id;
+
+        response = await fetch(searchUrl);
+        data = await response.json();
+        if (data.items && data.items.length > 0) return data.items[0].snippet.channelId;
+        
+        return null;
+    } catch (error) {
+        console.error("Erreur de fetchChannelId:", error);
+        return null;
+    }
+}
+
+function extractChannelHandle(url) {
+    const patterns = [
+        /youtube\.com\/(?:c\/|channel\/|user\/)?([^/]+)/,
+        /youtube\.com\/@([^/]+)/
+    ];
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1].startsWith('@') ? match[1] : `@${match[1]}`;
+        }
+    }
+    return null;
+}
+
+async function getChannelInfo(channelId) {
+    const url = `${API_BASE_URL}/channels?id=${channelId}&key=${API_KEY}&part=snippet,contentDetails,statistics`;
+    const response = await fetch(url);
+    return await response.json();
+}
+
+async function getPlaylistItems(playlistId, maxResults) {
+    let items = [];
+    let nextPageToken = '';
+    while (items.length < maxResults) {
+        const url = `${API_BASE_URL}/playlistItems?playlistId=${playlistId}&key=${API_KEY}&part=snippet&maxResults=50&pageToken=${nextPageToken}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        items = items.concat(data.items.filter(item => item.snippet.title !== "Private video" && item.snippet.title !== "Deleted video"));
+        nextPageToken = data.nextPageToken;
+        if (!nextPageToken) break;
+    }
+    return items.slice(0, maxResults);
+}
+
+async function getVideoStats(videoIds) {
+    const url = `${API_BASE_URL}/videos?id=${videoIds.join(',')}&key=${API_KEY}&part=statistics`;
+    const response = await fetch(url);
+    return await response.json();
+}
+
+// --- Logique principale ---
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+        const url = channelUrlInput.value;
+        const handle = extractChannelHandle(url);
+        if (!handle) throw new Error("URL de chaîne invalide.");
+        
+        const channelId = await fetchChannelId(handle.replace('@', ''));
+        if (!channelId) throw new Error("Chaîne introuvable.");
+
+        const channelData = await getChannelInfo(channelId);
+        const channelInfo = channelData.items[0];
+
+        updatePlaylistHeader(channelInfo);
+
+        const uploadsPlaylistId = channelInfo.contentDetails.relatedPlaylists.uploads;
+        const videoCount = parseInt(videoCountSelect.value);
+        const videos = await getPlaylistItems(uploadsPlaylistId, videoCount);
+        
+        // Ajouter à l'historique
+        addToSearchHistory(channelInfo, videos.length);
+        
+        const videoIds = videos.map(v => v.snippet.resourceId.videoId);
+        const statsData = await getVideoStats(videoIds);
+        
+        currentPlaylist = videos.map(video => {
+            const stats = statsData.items.find(s => s.id === video.snippet.resourceId.videoId);
+            return {
+                id: video.snippet.resourceId.videoId,
+                title: video.snippet.title,
+                artist: video.snippet.channelTitle,
+                thumbnail: video.snippet.thumbnails.default.url,
+                plays: stats?.statistics.viewCount || 0,
+                likes: stats?.statistics.likeCount || 0,
+            };
+        });
+
+        currentPlaylist.sort((a, b) => b.likes - a.likes);
+        
+        renderPlaylist();
+        playlistContainer.classList.remove('hidden');
+
+    } catch (err) {
+        showError(err.message);
+    } finally {
+        setLoading(false);
+    }
+});
+
+// --- Rendu et UI ---
+
+function renderPlaylist() {
+    playlistDiv.innerHTML = '';
+    currentPlaylist.forEach((track, index) => {
+        const trackElement = document.createElement('div');
+        trackElement.className = 'video-item';
+        trackElement.dataset.index = index;
+        trackElement.innerHTML = `
+            <div class="track-number">
+                <span class="track-index">${index + 1}</span>
+                <i class="fas fa-play play-icon-hover"></i>
+            </div>
+            <div class="track-title">
+                <div class="video-info">
+                    <img src="${track.thumbnail}" alt="${track.title}">
+                    <div>
+                        <div class="video-title">${track.title}</div>
+                        <div class="video-artist">${track.artist}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="track-plays">${formatNumber(track.plays)}</div>
+            <div class="track-likes">${formatNumber(track.likes)}</div>
+            <div class="track-actions">
+                <button class="like-btn"><i class="far fa-heart"></i></button>
+            </div>
+        `;
+        trackElement.querySelector('.like-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openSaveToPlaylistModal(track);
+        });
+        trackElement.addEventListener('click', () => playTrack(index));
+        playlistDiv.appendChild(trackElement);
+    });
+}
+
+function updatePlaylistHeader(channelInfo) {
+    channelNameH1.textContent = channelInfo.snippet.title;
+    channelThumbnailImg.src = channelInfo.snippet.thumbnails.high.url;
+    // La ligne suivante est retirée pour ne plus mettre le fond
+    // document.documentElement.style.setProperty('--channel-art', `url(${channelInfo.snippet.thumbnails.high.url})`);
+    videoCountInfoSpan.textContent = `${formatNumber(channelInfo.statistics.videoCount)} vidéos`;
+    
+    openYouTubeBtn.onclick = () => {
+        window.open(`https://www.youtube.com/channel/${channelInfo.id}`, '_blank');
+    };
+}
+
+function highlightCurrentTrack() {
+    document.querySelectorAll('.video-item').forEach(item => {
+        const trackIndexEl = item.querySelector('.track-index');
+        const playIconEl = item.querySelector('.play-icon-hover');
+
+        item.classList.remove('playing');
+        if (trackIndexEl) trackIndexEl.style.display = 'inline';
+        if (playIconEl) playIconEl.style.display = 'none';
+
+        if (parseInt(item.dataset.index) === currentTrackIndex) {
+            item.classList.add('playing');
+        }
+    });
+}
+
+function updateNowPlayingUI(track) {
+    if (!track) return;
+    playerThumbnail.src = track.thumbnail;
+    playerTitle.textContent = track.title;
+    playerArtist.textContent = track.artist;
+    totalDurationSpan.textContent = formatTime(player.getDuration());
+}
+
+// --- Contrôles du lecteur ---
+
+function playTrack(index) {
+    currentTrackIndex = index;
+    const track = currentPlaylist[index];
+    player.loadVideoById(track.id);
+    playerBar.classList.add('active'); // Peut-être pour montrer la barre
+}
+
+function playNextTrack() {
+    const nextIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+    playTrack(nextIndex);
+}
+
+function playPreviousTrack() {
+    const prevIndex = (currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+    playTrack(prevIndex);
+}
+
+function togglePlayPause() {
+    if (isPlaying) {
+        player.pauseVideo();
+    } else {
+        player.playVideo();
+    }
+}
+
+function updatePlayPauseButton() {
+    const icon = playPauseBtn.querySelector('i');
+    icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+}
+
+function startProgressTracking() {
+    clearInterval(progressInterval);
+    progressInterval = setInterval(() => {
+        const currentTime = player.getCurrentTime();
+        const duration = player.getDuration();
+        if (duration > 0) {
+            const progress = (currentTime / duration) * 100;
+            progressBar.style.width = `${progress}%`;
+            currentTimeSpan.textContent = formatTime(currentTime);
+            totalDurationSpan.textContent = formatTime(duration);
+        }
+    }, 1000);
+}
+
+// --- Gestion des Playlists Utilisateur ---
+
+function loadPlaylistsFromStorage() {
+    try {
+        const storedPlaylists = localStorage.getItem('userPlaylists');
+        console.log("CHARGEMENT : Données brutes depuis localStorage:", storedPlaylists);
+        console.log("CHARGEMENT : Type des données:", typeof storedPlaylists);
+        
+        if (storedPlaylists && storedPlaylists !== 'null') {
+            userPlaylists = JSON.parse(storedPlaylists);
+            console.log("CHARGEMENT : Playlists chargées dans l'application:", userPlaylists);
+            console.log("CHARGEMENT : Nombre de playlists chargées:", userPlaylists.length);
+            
+            // Vérifier la structure des données
+            if (Array.isArray(userPlaylists)) {
+                console.log("CHARGEMENT : Structure des données correcte (Array)");
+            } else {
+                console.error("CHARGEMENT : Structure des données incorrecte - pas un Array");
+                userPlaylists = [];
+            }
+        } else {
+            console.log("CHARGEMENT : Aucune playlist trouvée dans localStorage.");
+            userPlaylists = [];
+        }
+    } catch (error) {
+        console.error("CHARGEMENT : Erreur lors du chargement:", error);
+        userPlaylists = [];
+    }
+}
+
+function savePlaylistsToStorage() {
+    try {
+        const dataToSave = JSON.stringify(userPlaylists);
+        localStorage.setItem('userPlaylists', dataToSave);
+        console.log("SAUVEGARDE : Playlists sauvegardées dans localStorage:", dataToSave);
+        
+        // Vérifier immédiatement que la sauvegarde a fonctionné
+        const verification = localStorage.getItem('userPlaylists');
+        if (verification === dataToSave) {
+            console.log("SAUVEGARDE : Vérification réussie - données bien sauvegardées");
+        } else {
+            console.error("SAUVEGARDE : Échec de la vérification - les données ne correspondent pas");
+        }
+    } catch (error) {
+        console.error("SAUVEGARDE : Erreur lors de la sauvegarde:", error);
+    }
+}
+
+function renderUserPlaylists() {
+    userPlaylistsDiv.innerHTML = '';
+    if (userPlaylists.length === 0) {
+        userPlaylistsDiv.innerHTML = '<p style="padding: 0 8px; color: var(--text-color-light);">Créez votre première playlist !</p>';
+        return;
+    }
+    userPlaylists.forEach(playlist => {
+        const playlistEl = document.createElement('div');
+        playlistEl.className = 'playlist-item';
+        playlistEl.innerHTML = `
+            <img src="${playlist.tracks[0]?.thumbnail || 'https://via.placeholder.com/48'}" alt="${playlist.name}">
+            <div class="playlist-info">
+                <div class="name">${playlist.name}</div>
+                <div class="count">${playlist.tracks.length} morceau(x)</div>
+            </div>
+        `;
+        playlistEl.addEventListener('click', () => displayUserPlaylist(playlist));
+        userPlaylistsDiv.appendChild(playlistEl);
+    });
+}
+
+function createNewPlaylist(name) {
+    if (!name || userPlaylists.find(p => p.name === name)) {
+        showError("Nom de playlist invalide ou déjà utilisé.");
+        return null;
+    }
+    const newPlaylist = {
+        id: `playlist_${Date.now()}`,
+        name: name,
+        tracks: []
+    };
+    userPlaylists.unshift(newPlaylist);
+    savePlaylistsToStorage();
+    renderUserPlaylists();
+    return newPlaylist;
+}
+
+function addTrackToPlaylist(track, playlist) {
+    if (playlist.tracks.find(t => t.id === track.id)) {
+        showError("Ce morceau est déjà dans la playlist.");
+        return;
+    }
+    playlist.tracks.push(track);
+    savePlaylistsToStorage();
+    renderUserPlaylists(); // Mettre à jour le nombre de morceaux
+    showError(`${track.title} a été ajouté à ${playlist.name}`, 'success');
+}
+
+function displayUserPlaylist(playlist) {
+    currentPlaylist = playlist.tracks;
+    renderPlaylist();
+    
+    channelNameH1.textContent = playlist.name;
+    channelThumbnailImg.src = playlist.tracks[0]?.thumbnail || 'https://via.placeholder.com/150';
+    videoCountInfoSpan.textContent = `${playlist.tracks.length} morceaux`;
+    openYouTubeBtn.classList.add('hidden');
+    playlistContainer.classList.remove('hidden');
+}
+
+
+// --- Modale de Sauvegarde ---
+function openSaveToPlaylistModal(track) {
+    trackToSave = track;
+    modalPlaylistList.innerHTML = '';
+    userPlaylists.forEach(playlist => {
+        const li = document.createElement('li');
+        li.textContent = playlist.name;
+        li.addEventListener('click', () => {
+            addTrackToPlaylist(trackToSave, playlist);
+            closeSaveToPlaylistModal();
+        });
+        modalPlaylistList.appendChild(li);
+    });
+    saveToPlaylistModal.classList.remove('hidden');
+}
+
+function closeSaveToPlaylistModal() {
+    saveToPlaylistModal.classList.add('hidden');
+    newPlaylistNameInput.value = '';
+    trackToSave = null;
+}
+
+modalCloseBtn.addEventListener('click', closeSaveToPlaylistModal);
+saveToPlaylistModal.addEventListener('click', (e) => {
+    if (e.target === saveToPlaylistModal) {
+        closeSaveToPlaylistModal();
+    }
+});
+
+confirmNewPlaylistBtn.addEventListener('click', () => {
+    const newName = newPlaylistNameInput.value.trim();
+    if (newName && trackToSave) {
+        const newPlaylist = createNewPlaylist(newName);
+        if (newPlaylist) {
+            addTrackToPlaylist(trackToSave, newPlaylist);
+            closeSaveToPlaylistModal();
+        }
+    }
+});
+
+createPlaylistBtn.addEventListener('click', () => {
+    const playlistName = prompt("Entrez le nom de la nouvelle playlist :");
+    if (playlistName) {
+        createNewPlaylist(playlistName.trim());
+    }
+});
+
+// Event listeners pour les boutons du lecteur
+playPauseBtn.addEventListener('click', togglePlayPause);
+document.querySelector('.player-btn:has(.fa-step-forward)').addEventListener('click', playNextTrack);
+document.querySelector('.player-btn:has(.fa-step-backward)').addEventListener('click', playPreviousTrack);
+progressBarWrapper.addEventListener('click', (e) => {
+    const rect = progressBarWrapper.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const progress = (clickX / width);
+    const newTime = player.getDuration() * progress;
+    player.seekTo(newTime, true);
+});
+
+// Event listeners pour l'historique
+clearHistoryBtn.addEventListener('click', clearSearchHistory);
+
+// --- Utilitaires ---
+function setLoading(isLoading) {
+    if (isLoading) {
+        btnText.classList.add('hidden');
+        loadingSpinner.classList.remove('hidden');
+        generateBtn.disabled = true;
+    } else {
+        btnText.classList.remove('hidden');
+        loadingSpinner.classList.add('hidden');
+        generateBtn.disabled = false;
+    }
+}
+
+function showError(message, type = 'error') {
+    errorDiv.textContent = message;
+    errorDiv.className = `error-message ${type}`;
+    errorDiv.classList.remove('hidden');
+    setTimeout(() => errorDiv.classList.add('hidden'), 3000);
+}
+
+function formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
+    return num.toString();
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${minutes}:${secs}`;
+}
+
+// --- Gestion de l'historique des recherches ---
+
+function loadSearchHistory() {
+    try {
+        const storedHistory = localStorage.getItem('searchHistory');
+        console.log("HISTORIQUE : Données brutes depuis localStorage:", storedHistory);
+        
+        if (storedHistory && storedHistory !== 'null') {
+            searchHistory = JSON.parse(storedHistory);
+            console.log("HISTORIQUE : Historique chargé:", searchHistory.length);
+            
+            if (Array.isArray(searchHistory)) {
+                console.log("HISTORIQUE : Structure des données correcte (Array)");
+            } else {
+                console.error("HISTORIQUE : Structure des données incorrecte - pas un Array");
+                searchHistory = [];
+            }
+        } else {
+            console.log("HISTORIQUE : Aucun historique trouvé dans localStorage.");
+            searchHistory = [];
+        }
+    } catch (error) {
+        console.error("HISTORIQUE : Erreur lors du chargement:", error);
+        searchHistory = [];
+    }
+}
+
+function saveSearchHistory() {
+    try {
+        const dataToSave = JSON.stringify(searchHistory);
+        localStorage.setItem('searchHistory', dataToSave);
+        console.log("HISTORIQUE : Historique sauvegardé dans localStorage:", dataToSave);
+    } catch (error) {
+        console.error("HISTORIQUE : Erreur lors de la sauvegarde:", error);
+    }
+}
+
+function addToSearchHistory(channelInfo, videoCount) {
+    const historyItem = {
+        id: channelInfo.id,
+        title: channelInfo.snippet.title,
+        thumbnail: channelInfo.snippet.thumbnails.default.url,
+        videoCount: videoCount,
+        subscriberCount: channelInfo.statistics.subscriberCount,
+        date: new Date().toISOString(),
+        url: channelUrlInput.value
+    };
+    
+    // Supprimer l'entrée existante si elle existe
+    searchHistory = searchHistory.filter(item => item.id !== channelInfo.id);
+    
+    // Ajouter au début de la liste
+    searchHistory.unshift(historyItem);
+    
+    // Limiter à 25 entrées maximum
+    if (searchHistory.length > 25) {
+        searchHistory = searchHistory.slice(0, 25);
+    }
+    
+    saveSearchHistory();
+    renderSearchHistory();
+    
+    console.log("HISTORIQUE : Ajouté:", historyItem.title);
+}
+
+function renderSearchHistory() {
+    if (searchHistory.length === 0) {
+        historyList.innerHTML = `
+            <div class="history-empty">
+                <i class="fas fa-history"></i>
+                <p>Aucune recherche récente</p>
+                <p>Recherchez une chaîne pour voir l'historique ici</p>
+            </div>
+        `;
+        return;
+    }
+    
+    historyList.innerHTML = searchHistory.map(item => {
+        const date = new Date(item.date);
+        const formattedDate = date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+        
+        return `
+            <div class="history-item" data-channel-id="${item.id}" data-url="${item.url}">
+                <div class="history-item-info">
+                    <img src="${item.thumbnail}" alt="${item.title}" class="history-item-thumbnail">
+                    <div class="history-item-details">
+                        <div class="history-item-title">${item.title}</div>
+                        <div class="history-item-meta">${formatNumber(item.videoCount)} vidéos • ${formatNumber(item.subscriberCount)} abonnés</div>
+                    </div>
+                </div>
+                <div class="history-item-date">${formattedDate}</div>
+            </div>
+        `;
+    }).join('');
+    
+    // Ajouter les événements click
+    historyList.querySelectorAll('.history-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const url = item.dataset.url;
+            channelUrlInput.value = url;
+            
+            // Déclencher la recherche
+            form.dispatchEvent(new Event('submit'));
+        });
+    });
+}
+
+function clearSearchHistory() {
+    searchHistory = [];
+    saveSearchHistory();
+    renderSearchHistory();
+    console.log("HISTORIQUE : Historique effacé");
+}
+
+
+
+// --- Initialisation de l'application ---
+function initializeApp() {
+    console.log("INIT : Initialisation de l'application");
+    
+    // Vérifier si localStorage est disponible
+    if (typeof(Storage) !== "undefined") {
+        console.log("INIT : localStorage est disponible");
+        
+        // Tester l'écriture/lecture localStorage
+        try {
+            localStorage.setItem('test', 'testValue');
+            const testRead = localStorage.getItem('test');
+            console.log("INIT : Test localStorage - Écrit/Lu:", testRead);
+            localStorage.removeItem('test');
+        } catch (e) {
+            console.error("INIT : Erreur lors du test localStorage:", e);
+        }
+        
+        // Charger les playlists et l'historique
+        loadPlaylistsFromStorage();
+        renderUserPlaylists();
+        loadSearchHistory();
+        renderSearchHistory();
+        
+        console.log("INIT : Playlists chargées:", userPlaylists.length);
+        console.log("INIT : Historique chargé:", searchHistory.length);
+    } else {
+        console.error("INIT : localStorage n'est pas disponible");
+    }
+}
+
+// Initialiser l'application quand la page est chargée
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+// Backup : initialiser si la page est déjà chargée
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
