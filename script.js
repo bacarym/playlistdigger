@@ -897,25 +897,42 @@ function createDiscogsTrackElement(track, index) {
     const artist = track.title ? track.title.split(' - ')[0] : 'Artiste inconnu';
     const album = track.title ? track.title.split(' - ').slice(1).join(' - ') : '';
     const year = track.year || '';
-    const format = track.format ? track.format.join(', ') : '';
-    const label = track.label ? track.label.join(', ') : '';
     
     div.innerHTML = `
         <div class="track-info">
             <div class="track-title">${title}</div>
             <div class="track-artist">${artist}</div>
-            <div class="track-details">${format}${label ? ` • ${label}` : ''}</div>
+            <div class="track-preview">
+                <button class="preview-btn" data-release-id="${track.id}" title="Écouter un aperçu de la première track">
+                    <i class="fas fa-play"></i>
+                    Preview
+                </button>
+            </div>
         </div>
         <div class="track-year">${year}</div>
     `;
     
-    div.addEventListener('click', () => {
-        console.log('Track Discogs sélectionné:', track);
-        // Vérifier si c'est une release avec un ID
-        if (track.id) {
-            handleDiscogsReleaseClick(track.id);
+    // Event listener pour le clic général sur l'élément (aller à la tracklist)
+    div.addEventListener('click', (e) => {
+        // Ne pas déclencher si on clique sur le bouton preview
+        if (!e.target.closest('.preview-btn')) {
+            console.log('Track Discogs sélectionné:', track);
+            if (track.id) {
+                handleDiscogsReleaseClick(track.id);
+            }
         }
     });
+    
+    // Event listener spécifique pour le bouton preview
+    const previewBtn = div.querySelector('.preview-btn');
+    if (previewBtn) {
+        previewBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Clic sur Preview pour:', track.title);
+            handlePreviewClick(track.id, artist);
+        });
+    }
     
     return div;
 }
@@ -1216,6 +1233,86 @@ function navigateBackToDiscogsResults() {
     // Masquer la page tracklist et afficher la page de résultats
     discogsTracklistPage.classList.remove('active');
     discogsResultsPage.classList.add('active');
+}
+
+// Fonction pour le preview (première track uniquement)
+async function handlePreviewClick(releaseId, artistName) {
+    if (!releaseId) {
+        console.error('Pas d\'ID de release pour le preview');
+        return;
+    }
+    
+    try {
+        console.log('🎵 Preview demandé pour release ID:', releaseId);
+        
+        // Récupérer les détails de la release
+        const releaseData = await getDiscogsReleaseDetails(releaseId);
+        
+        if (!releaseData.tracklist || releaseData.tracklist.length === 0) {
+            console.log('❌ Aucune tracklist trouvée pour cette release');
+            return;
+        }
+        
+        // Prendre seulement la première track
+        const firstTrack = releaseData.tracklist[0];
+        const trackArtist = releaseData.artists?.[0]?.name || artistName || 'Unknown Artist';
+        
+        console.log('🎵 Recherche de la première track:', firstTrack.title, 'par', trackArtist);
+        
+        // Chercher la première track sur YouTube
+        const youtubeData = await searchYouTubeForTrack(firstTrack.title, trackArtist);
+        
+        if (!youtubeData) {
+            console.log('❌ Première track non trouvée sur YouTube');
+            return;
+        }
+        
+        console.log('✅ Track trouvée sur YouTube:', youtubeData.title);
+        
+        // Mettre à jour les informations du lecteur
+        playerThumbnail.src = youtubeData.thumbnail;
+        playerTitle.textContent = firstTrack.title;
+        playerArtist.textContent = trackArtist;
+        
+        // Marquer qu'on joue un preview (pas depuis une tracklist complète)
+        isPlayingFromTracklist = false;
+        currentTrackIndex = 0;
+        
+        // Lancer la lecture
+        if (!player) {
+            console.log("🔄 Player non initialisé, tentative d'initialisation...");
+            initializeYouTubePlayer();
+        }
+        
+        waitForPlayer(() => {
+            try {
+                console.log('🎵 Lecture du preview - ID YouTube:', youtubeData.id);
+                player.loadVideoById(youtubeData.id);
+                
+                setTimeout(() => {
+                    try {
+                        const state = player.getPlayerState();
+                        console.log('🎵 État du preview après chargement:', state);
+                        
+                        if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING) {
+                            console.log('✅ Preview lancé avec succès');
+                        } else {
+                            console.log('🔄 Tentative de forcer la lecture du preview...');
+                            player.playVideo();
+                        }
+                    } catch (stateError) {
+                        console.error('❌ Erreur lors de la vérification du state du preview:', stateError);
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement du preview:', error);
+            }
+        }, 15);
+        
+    } catch (error) {
+        console.error('❌ Erreur lors du preview:', error);
+    }
 }
 
 // Fonction principale pour traiter une release Discogs

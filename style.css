@@ -542,6 +542,43 @@ body {
     color: #ff6b6b;
 }
 
+/* Bouton Preview dans les résultats Discogs */
+.track-preview {
+    margin-top: 8px;
+}
+
+.preview-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: var(--accent-color);
+    color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.preview-btn:hover {
+    background-color: var(--accent-color-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 112, 67, 0.3);
+}
+
+.preview-btn i {
+    font-size: 10px;
+}
+
+.preview-btn:active {
+    transform: translateY(0);
+}
+
 /* Styles pour no-audio déplacés vers la section tracklist spécifique */
 
 /* Styles génériques de table-row supprimés pour éviter les conflits */
