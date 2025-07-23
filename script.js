@@ -60,6 +60,19 @@ const discogsBackBtn = document.getElementById('discogs-back-btn');
 const discogsHistoryList = document.getElementById('discogsHistoryList');
 const clearDiscogsHistoryBtn = document.getElementById('clearDiscogsHistoryBtn');
 
+// Éléments tracklist Discogs
+const discogsTracklistPage = document.getElementById('discogs-tracklist-page');
+const discogsTracklistBackBtn = document.getElementById('discogs-tracklist-back-btn');
+const tracklistAlbumArt = document.getElementById('tracklistAlbumArt');
+const tracklistTitle = document.getElementById('tracklistTitle');
+const tracklistArtist = document.getElementById('tracklistArtist');
+const tracklistYear = document.getElementById('tracklistYear');
+const tracklistFormat = document.getElementById('tracklistFormat');
+const tracklistLabel = document.getElementById('tracklistLabel');
+const tracklistLoadingContainer = document.getElementById('tracklistLoadingContainer');
+const loadingProgressText = document.getElementById('loadingProgressText');
+const tracklistTracks = document.getElementById('tracklistTracks');
+
 // Éléments du lecteur
 const playerBar = document.querySelector('.player-bar');
 const playPauseBtn = document.getElementById('playPauseBtn');
@@ -785,6 +798,10 @@ function createDiscogsTrackElement(track, index) {
     
     div.addEventListener('click', () => {
         console.log('Track Discogs sélectionné:', track);
+        // Vérifier si c'est une release avec un ID
+        if (track.id) {
+            handleDiscogsReleaseClick(track.id);
+        }
     });
     
     return div;
@@ -797,6 +814,204 @@ function showDiscogsError(message) {
     setTimeout(() => {
         discogsError.classList.add('hidden');
     }, 5000);
+}
+
+// Récupération des détails d'une release Discogs
+async function getDiscogsReleaseDetails(releaseId) {
+    const releaseUrl = `${DISCOGS_API_URL}/releases/${releaseId}`;
+    
+    try {
+        const response = await fetch(releaseUrl, {
+            headers: {
+                'Authorization': `Discogs token=${DISCOGS_TOKEN}`,
+                'User-Agent': 'MelodyMix/1.0 +http://localhost:8000'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erreur Discogs: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Erreur lors de la récupération de la release:', error);
+        throw error;
+    }
+}
+
+// Recherche YouTube pour une track spécifique
+async function searchYouTubeForTrack(trackTitle, artistName) {
+    const query = `${artistName} ${trackTitle}`;
+    const searchUrl = `${API_BASE_URL}/search`;
+    const params = new URLSearchParams({
+        part: 'snippet',
+        q: query,
+        type: 'video',
+        maxResults: 1,
+        key: API_KEY
+    });
+
+    try {
+        const response = await fetch(`${searchUrl}?${params}`);
+        const data = await response.json();
+        
+        if (data.items && data.items.length > 0) {
+            const video = data.items[0];
+            // Récupérer les stats de la vidéo
+            const statsResponse = await fetch(`${API_BASE_URL}/videos?part=statistics&id=${video.id.videoId}&key=${API_KEY}`);
+            const statsData = await statsResponse.json();
+            
+            return {
+                id: video.id.videoId,
+                title: video.snippet.title,
+                thumbnail: video.snippet.thumbnails.medium.url,
+                channelTitle: video.snippet.channelTitle,
+                viewCount: statsData.items[0]?.statistics?.viewCount || '0'
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error('Erreur recherche YouTube:', error);
+        return null;
+    }
+}
+
+// Traitement d'une release complète
+async function processDiscogsRelease(releaseData) {
+    const tracks = releaseData.tracklist || [];
+    const processedTracks = [];
+    
+    // Afficher le chargement
+    tracklistLoadingContainer.classList.remove('hidden');
+    loadingProgressText.textContent = `0/${tracks.length}`;
+    
+    for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
+        loadingProgressText.textContent = `${i + 1}/${tracks.length}`;
+        
+        // Rechercher cette track sur YouTube
+        const youtubeData = await searchYouTubeForTrack(
+            track.title, 
+            releaseData.artists?.[0]?.name || 'Unknown Artist'
+        );
+        
+        processedTracks.push({
+            position: track.position || (i + 1),
+            title: track.title,
+            duration: track.duration || '',
+            youtubeData: youtubeData,
+            originalTrack: track
+        });
+        
+        // Petite pause pour éviter les rate limits
+        await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    
+    // Cacher le chargement
+    tracklistLoadingContainer.classList.add('hidden');
+    
+    return processedTracks;
+}
+
+// Afficher la tracklist
+function displayTracklist(releaseData, processedTracks) {
+    // Mettre à jour les informations de l'album
+    tracklistTitle.textContent = releaseData.title || 'Titre inconnu';
+    tracklistArtist.textContent = releaseData.artists?.[0]?.name || 'Artiste inconnu';
+    tracklistYear.textContent = releaseData.year ? `${releaseData.year}` : '';
+    tracklistFormat.textContent = releaseData.formats?.map(f => f.name).join(', ') || '';
+    tracklistLabel.textContent = releaseData.labels?.[0]?.name || '';
+    
+    // Image de l'album
+    if (releaseData.images && releaseData.images.length > 0) {
+        tracklistAlbumArt.src = releaseData.images[0].uri;
+    }
+    
+    // Vider la liste précédente
+    tracklistTracks.innerHTML = '';
+    
+    // Afficher chaque track
+    processedTracks.forEach((track, index) => {
+        const trackElement = createTracklistElement(track, index, releaseData.artists?.[0]?.name || 'Artiste inconnu');
+        tracklistTracks.appendChild(trackElement);
+    });
+}
+
+// Créer un élément de track pour la tracklist
+function createTracklistElement(track, index, artistName) {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    
+    const hasYouTube = track.youtubeData !== null;
+    const playButton = hasYouTube ? 
+        `<button class="play-btn" data-video-id="${track.youtubeData.id}" data-track-index="${index}">
+            <i class="fas fa-play"></i>
+        </button>` : 
+        `<span class="no-audio"><i class="fas fa-ban"></i></span>`;
+    
+    const viewCount = hasYouTube ? 
+        parseInt(track.youtubeData.viewCount).toLocaleString() : 
+        'N/A';
+    
+    div.innerHTML = `
+        <div class="track-number">${track.position}</div>
+        <div class="track-title">
+            <div class="track-info">
+                <div class="track-name">${track.title}</div>
+                ${hasYouTube ? `<div class="track-source">Trouvé sur YouTube</div>` : `<div class="track-source no-source">Non trouvé sur YouTube</div>`}
+            </div>
+        </div>
+        <div class="track-duration">${track.duration}</div>
+        <div class="track-plays">${viewCount}</div>
+        <div class="track-actions">
+            ${playButton}
+            <button class="save-track-btn" data-track='${JSON.stringify({
+                id: hasYouTube ? track.youtubeData.id : null,
+                title: track.title,
+                artist: artistName,
+                thumbnail: hasYouTube ? track.youtubeData.thumbnail : 'https://via.placeholder.com/120'
+            })}'>
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    `;
+    
+    // Event listeners pour les boutons
+    if (hasYouTube) {
+        const playBtn = div.querySelector('.play-btn');
+        playBtn.addEventListener('click', () => {
+            playTrackFromTracklist(track, index, artistName);
+        });
+    }
+    
+    const saveBtn = div.querySelector('.save-track-btn');
+    saveBtn.addEventListener('click', (e) => {
+        const trackData = JSON.parse(e.target.closest('.save-track-btn').dataset.track);
+        if (trackData.id) {
+            trackToSave = trackData;
+            showSaveToPlaylistModal();
+        }
+    });
+    
+    return div;
+}
+
+// Jouer une track depuis la tracklist
+function playTrackFromTracklist(track, index, artistName) {
+    if (!track.youtubeData) return;
+    
+    // Mettre à jour les informations du lecteur
+    playerThumbnail.src = track.youtubeData.thumbnail;
+    playerTitle.textContent = track.title;
+    playerArtist.textContent = artistName || tracklistArtist.textContent;
+    
+    // Jouer la vidéo
+    if (player && player.loadVideoById) {
+        player.loadVideoById(track.youtubeData.id);
+        currentTrackIndex = index;
+        // Note: currentPlaylist pourrait être adapté pour la tracklist
+    }
 }
 
 // Navigation Discogs
@@ -813,6 +1028,41 @@ function navigateBackToDiscogsSearch() {
     
     // Rafraîchir l'historique
     renderDiscogsHistory();
+}
+
+function navigateToDiscogsTracklist() {
+    // Masquer la page de résultats et afficher la page tracklist
+    discogsResultsPage.classList.remove('active');
+    discogsTracklistPage.classList.add('active');
+}
+
+function navigateBackToDiscogsResults() {
+    // Masquer la page tracklist et afficher la page de résultats
+    discogsTracklistPage.classList.remove('active');
+    discogsResultsPage.classList.add('active');
+}
+
+// Fonction principale pour traiter une release Discogs
+async function handleDiscogsReleaseClick(releaseId) {
+    try {
+        // Naviguer vers la page tracklist
+        navigateToDiscogsTracklist();
+        
+        // Récupérer les détails de la release
+        const releaseData = await getDiscogsReleaseDetails(releaseId);
+        
+        // Traiter toutes les tracks
+        const processedTracks = await processDiscogsRelease(releaseData);
+        
+        // Afficher la tracklist
+        displayTracklist(releaseData, processedTracks);
+        
+    } catch (error) {
+        console.error('Erreur lors du traitement de la release:', error);
+        // Retourner à la page de résultats en cas d'erreur
+        navigateBackToDiscogsResults();
+        showDiscogsError('Erreur lors du chargement de la tracklist.');
+    }
 }
 
 // Gestion de l'historique Discogs
@@ -985,6 +1235,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (clearDiscogsHistoryBtn) {
         clearDiscogsHistoryBtn.addEventListener('click', clearDiscogsHistory);
     }
+    
+    if (discogsTracklistBackBtn) {
+        discogsTracklistBackBtn.addEventListener('click', navigateBackToDiscogsResults);
+    }
 });
 
 // Backup : initialiser si la page est déjà chargée
@@ -1001,6 +1255,9 @@ if (document.readyState === 'loading') {
         if (clearDiscogsHistoryBtn) {
             clearDiscogsHistoryBtn.addEventListener('click', clearDiscogsHistory);
         }
+        if (discogsTracklistBackBtn) {
+            discogsTracklistBackBtn.addEventListener('click', navigateBackToDiscogsResults);
+        }
     });
 } else {
     initializeApp();
@@ -1013,5 +1270,8 @@ if (document.readyState === 'loading') {
     }
     if (clearDiscogsHistoryBtn) {
         clearDiscogsHistoryBtn.addEventListener('click', clearDiscogsHistory);
+    }
+    if (discogsTracklistBackBtn) {
+        discogsTracklistBackBtn.addEventListener('click', navigateBackToDiscogsResults);
     }
 }

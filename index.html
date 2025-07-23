@@ -6,7 +6,7 @@
     <title>MelodyMix - Générateur de Playlist</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=2.1">
+    <link rel="stylesheet" href="style.css?v=2.2">
 </head>
 <body>
     <div class="app-container">
@@ -167,6 +167,53 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Page Discogs - Tracklist -->
+            <div id="discogs-tracklist-page" class="page-content">
+                <div class="tracklist-page-header">
+                    <button id="discogs-tracklist-back-btn" class="back-button">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour aux résultats
+                    </button>
+                    <div class="tracklist-info">
+                        <img id="tracklistAlbumArt" src="https://via.placeholder.com/120" alt="Album art" class="tracklist-album-art">
+                        <div class="tracklist-details">
+                            <h2 id="tracklistTitle">Album Title</h2>
+                            <p id="tracklistArtist">Artist Name</p>
+                            <div class="tracklist-meta">
+                                <span id="tracklistYear" class="meta-item"></span>
+                                <span id="tracklistFormat" class="meta-item"></span>
+                                <span id="tracklistLabel" class="meta-item"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tracklistLoadingContainer" class="tracklist-loading-container hidden">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p>Recherche des tracks sur YouTube...</p>
+                    <div id="loadingProgress" class="loading-progress">
+                        <span id="loadingProgressText">0/0</span>
+                    </div>
+                </div>
+
+                <div id="tracklistContainer" class="tracklist-container">
+                    <div class="playlist-table">
+                        <div class="table-header">
+                            <div class="track-number">#</div>
+                            <div class="track-title">Titre</div>
+                            <div class="track-duration">Durée</div>
+                            <div class="track-plays">Lectures</div>
+                            <div class="track-actions"></div>
+                        </div>
+                        <div id="tracklistTracks" class="table-body">
+                            <!-- Les tracks de la release apparaissent ici -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
 
         <footer class="player-bar">
@@ -216,6 +263,6 @@
     </div>
     
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="script.js?v=2.1"></script>
+    <script src="script.js?v=2.2"></script>
 </body>
 </html> 
