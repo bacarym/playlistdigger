@@ -66,15 +66,9 @@ const discogsBackBtn = document.getElementById('discogs-back-btn');
 const discogsHistoryList = document.getElementById('discogsHistoryList');
 const clearDiscogsHistoryBtn = document.getElementById('clearDiscogsHistoryBtn');
 
-// Éléments pour le mode populaire
-const popularBtn = document.getElementById('popularBtn');
-const backToResultsBtn = document.getElementById('backToResultsBtn');
-const popularLoadingContainer = document.getElementById('popularLoadingContainer');
-const popularProgressText = document.getElementById('popularProgressText');
-const popularTracksContainer = document.getElementById('popularTracksContainer');
-const popularTracksList = document.getElementById('popularTracksList');
-const popularTracksInfo = document.getElementById('popularTracksInfo');
-const loadMoreTracksBtn = document.getElementById('loadMoreTracksBtn');
+// Éléments pour le mode populaire (référencés dynamiquement)
+let popularBtn, backToResultsBtn, popularLoadingContainer, popularProgressText;
+let popularTracksContainer, popularTracksList, popularTracksInfo, loadMoreTracksBtn;
 
 // Éléments tracklist Discogs
 const discogsTracklistPage = document.getElementById('discogs-tracklist-page');
@@ -1004,14 +998,44 @@ async function searchYouTubeForTrack(trackTitle, artistName) {
 
     try {
         const response = await fetch(`${searchUrl}?${params}`);
+        
+        // Vérifier le statut de la réponse
+        if (response.status === 403) {
+            console.error('❌ API YouTube : Quota dépassé ou clé invalide (403)');
+            return null;
+        }
+        
+        if (!response.ok) {
+            console.error(`❌ API YouTube : Erreur ${response.status}`);
+            return null;
+        }
+        
         const data = await response.json();
+        
+        if (data.error) {
+            console.error('❌ API YouTube Error:', data.error.message);
+            return null;
+        }
         
         if (data.items && data.items.length > 0) {
             const video = data.items[0];
             // Récupérer les stats de la vidéo (vues et likes)
             const statsResponse = await fetch(`${API_BASE_URL}/videos?part=statistics&id=${video.id.videoId}&key=${API_KEY}`);
-            const statsData = await statsResponse.json();
             
+            if (statsResponse.status === 403) {
+                console.error('❌ API YouTube Stats : Quota dépassé (403)');
+                // Retourner au moins les infos de base
+                return {
+                    id: video.id.videoId,
+                    title: video.snippet.title,
+                    thumbnail: video.snippet.thumbnails.medium.url,
+                    channelTitle: video.snippet.channelTitle,
+                    viewCount: 'N/A',
+                    likeCount: 'N/A'
+                };
+            }
+            
+            const statsData = await statsResponse.json();
             const stats = statsData.items[0]?.statistics || {};
             
             return {
@@ -1025,7 +1049,7 @@ async function searchYouTubeForTrack(trackTitle, artistName) {
         }
         return null;
     } catch (error) {
-        console.error('Erreur recherche YouTube:', error);
+        console.error('❌ Erreur réseau recherche YouTube:', error);
         return null;
     }
 }
@@ -1240,6 +1264,9 @@ function navigateToDiscogsResults() {
     // Masquer la page de recherche et afficher la page de résultats
     document.getElementById('discogs-page').classList.remove('active');
     discogsResultsPage.classList.add('active');
+    
+    // Initialiser les éléments du mode populaire
+    initializePopularElements();
 }
 
 function navigateBackToDiscogsSearch() {
@@ -1344,6 +1371,31 @@ async function handlePreviewClick(releaseId, artistName) {
 }
 
 // --- Fonctionnalités mode populaire ---
+
+// Initialiser les éléments du mode populaire
+function initializePopularElements() {
+    popularBtn = document.getElementById('popularBtn');
+    backToResultsBtn = document.getElementById('backToResultsBtn');
+    popularLoadingContainer = document.getElementById('popularLoadingContainer');
+    popularProgressText = document.getElementById('popularProgressText');
+    popularTracksContainer = document.getElementById('popularTracksContainer');
+    popularTracksList = document.getElementById('popularTracksList');
+    popularTracksInfo = document.getElementById('popularTracksInfo');
+    loadMoreTracksBtn = document.getElementById('loadMoreTracksBtn');
+    
+    // Attacher les event listeners
+    if (popularBtn) {
+        popularBtn.addEventListener('click', handlePopularClick);
+    }
+    
+    if (backToResultsBtn) {
+        backToResultsBtn.addEventListener('click', resetPopularMode);
+    }
+    
+    if (loadMoreTracksBtn) {
+        loadMoreTracksBtn.addEventListener('click', loadMorePopularTracks);
+    }
+}
 
 // Réinitialiser le mode populaire
 function resetPopularMode() {
@@ -1806,19 +1858,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (discogsTracklistBackBtn) {
         discogsTracklistBackBtn.addEventListener('click', navigateBackToDiscogsResults);
     }
-    
-    // Event listeners pour le mode populaire
-    if (popularBtn) {
-        popularBtn.addEventListener('click', handlePopularClick);
-    }
-    
-    if (backToResultsBtn) {
-        backToResultsBtn.addEventListener('click', resetPopularMode);
-    }
-    
-    if (loadMoreTracksBtn) {
-        loadMoreTracksBtn.addEventListener('click', loadMorePopularTracks);
-    }
 });
 
 // Backup : initialiser si la page est déjà chargée
@@ -1838,15 +1877,6 @@ if (document.readyState === 'loading') {
         if (discogsTracklistBackBtn) {
             discogsTracklistBackBtn.addEventListener('click', navigateBackToDiscogsResults);
         }
-        if (popularBtn) {
-            popularBtn.addEventListener('click', handlePopularClick);
-        }
-        if (backToResultsBtn) {
-            backToResultsBtn.addEventListener('click', resetPopularMode);
-        }
-        if (loadMoreTracksBtn) {
-            loadMoreTracksBtn.addEventListener('click', loadMorePopularTracks);
-        }
     });
 } else {
     initializeApp();
@@ -1862,14 +1892,5 @@ if (document.readyState === 'loading') {
     }
     if (discogsTracklistBackBtn) {
         discogsTracklistBackBtn.addEventListener('click', navigateBackToDiscogsResults);
-    }
-    if (popularBtn) {
-        popularBtn.addEventListener('click', handlePopularClick);
-    }
-    if (backToResultsBtn) {
-        backToResultsBtn.addEventListener('click', resetPopularMode);
-    }
-    if (loadMoreTracksBtn) {
-        loadMoreTracksBtn.addEventListener('click', loadMorePopularTracks);
     }
 }
