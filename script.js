@@ -945,10 +945,10 @@ function createTracklistElement(track, index, artistName) {
     
     const hasYouTube = track.youtubeData !== null;
     const playButton = hasYouTube ? 
-        `<button class="play-btn" data-video-id="${track.youtubeData.id}" data-track-index="${index}">
+        `<button class="play-btn" data-video-id="${track.youtubeData.id}" data-track-index="${index}" title="Écouter cette track">
             <i class="fas fa-play"></i>
         </button>` : 
-        `<span class="no-audio"><i class="fas fa-ban"></i></span>`;
+        `<span class="no-audio" title="Cette track n'a pas été trouvée sur YouTube"><i class="fas fa-ban"></i></span>`;
     
     const viewCount = hasYouTube ? 
         parseInt(track.youtubeData.viewCount).toLocaleString() : 
@@ -975,7 +975,7 @@ function createTracklistElement(track, index, artistName) {
                 title: track.title,
                 artist: artistName,
                 thumbnail: hasYouTube ? track.youtubeData.thumbnail : 'https://via.placeholder.com/120'
-            }).replace(/"/g, '&quot;')}'>
+            }).replace(/"/g, '&quot;')}' title="Ajouter à une playlist">
                 <i class="fas fa-plus"></i>
             </button>
         </div>

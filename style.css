@@ -542,14 +542,7 @@ body {
     color: #ff6b6b;
 }
 
-.no-audio {
-    color: var(--text-color-disabled);
-    cursor: not-allowed;
-}
-
-.no-audio i {
-    font-size: 14px;
-}
+/* Styles pour no-audio déplacés vers la section tracklist spécifique */
 
 /* Styles génériques de table-row supprimés pour éviter les conflits */
 
@@ -622,6 +615,62 @@ body {
     display: flex;
     justify-content: center;
     gap: 8px;
+}
+
+/* Styles pour les boutons de la tracklist */
+.tracklist-container .play-btn,
+.tracklist-container .save-track-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    background-color: transparent;
+    color: var(--text-color-light);
+}
+
+.tracklist-container .play-btn:hover,
+.tracklist-container .save-track-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    transform: scale(1.1);
+}
+
+.tracklist-container .play-btn {
+    background-color: var(--accent-color);
+    color: #ffffff;
+}
+
+.tracklist-container .play-btn:hover {
+    background-color: var(--accent-color-hover);
+    color: #ffffff;
+}
+
+.tracklist-container .save-track-btn {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tracklist-container .save-track-btn:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background-color: rgba(255, 112, 67, 0.1);
+}
+
+.tracklist-container .no-audio {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color-disabled);
+    cursor: not-allowed;
 }
     grid-row: 1 / 2;
 }
