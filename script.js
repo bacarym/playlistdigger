@@ -2,6 +2,10 @@
 const API_KEY = 'AIzaSyBmUM8idf3U-J-4GHeL5rCRPNsV56qshFg';
 const API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
+// Clé API Discogs
+const DISCOGS_TOKEN = 'XvbJrfbtCsGlSRipdODoCZEpmDHwoxBLVbYhrprE';
+const DISCOGS_API_URL = 'https://api.discogs.com';
+
 // État de l'application
 let player;
 let currentPlaylist = [];
@@ -11,6 +15,7 @@ let isPlaying = false;
 let userPlaylists = [];
 let trackToSave = null;
 let searchHistory = [];
+let currentTab = 'youtube';
 
 // Éléments du DOM
 const form = document.getElementById('playlistForm');
@@ -682,12 +687,44 @@ function initializeApp() {
     }
 }
 
+// Gestion des onglets
+function initializeTabs() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+            
+            // Mettre à jour les boutons
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Mettre à jour les contenus
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabId}-section`).classList.add('active');
+            
+            // Mettre à jour l'état actuel
+            currentTab = tabId;
+            
+            console.log(`Onglet actif : ${tabId}`);
+        });
+    });
+}
+
 // Initialiser l'application quand la page est chargée
-document.addEventListener('DOMContentLoaded', initializeApp);
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
+    initializeTabs();
+});
 
 // Backup : initialiser si la page est déjà chargée
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeApp();
+        initializeTabs();
+    });
 } else {
     initializeApp();
+    initializeTabs();
 }

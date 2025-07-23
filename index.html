@@ -31,77 +31,110 @@
         </aside>
 
         <main class="main-content">
-            <header class="main-header">
-                <h2>Générer une Playlist YouTube</h2>
-                <p>Collez l'URL d'une chaîne pour créer une playlist triée par popularité.</p>
-            </header>
-
-            <div class="form-container">
-                <form id="playlistForm">
-                    <div class="input-group">
+            <!-- Système d'onglets -->
+            <div class="tabs-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" data-tab="youtube">
                         <i class="fab fa-youtube"></i>
-                        <input type="url" id="channelUrl" placeholder="URL de la chaîne YouTube" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-list-ol"></i>
-                        <select id="videoCount">
-                            <option value="10">10 vidéos</option>
-                            <option value="25" selected>25 vidéos</option>
-                            <option value="50">50 vidéos</option>
-                            <option value="100">100 vidéos</option>
-                        </select>
-                    </div>
-                    <button type="submit" id="generateBtn">
-                        <span id="btnText">Générer</span>
-                        <span id="loading" class="hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                        YouTube
                     </button>
-                </form>
-            </div>
-            <div id="error" class="error-message hidden"></div>
-
-            <!-- Historique des recherches -->
-            <div class="search-history-container">
-                <div class="search-history-header">
-                    <h3><i class="fas fa-history"></i> Historique des recherches</h3>
-                    <button id="clearHistoryBtn" class="clear-history-btn">
-                        <i class="fas fa-trash"></i>
-                        Effacer l'historique
+                    <button class="tab-btn" data-tab="discogs">
+                        <i class="fas fa-compact-disc"></i>
+                        Discogs
                     </button>
-                </div>
-                <div id="searchHistory" class="search-history">
-                    <div class="history-list" id="historyList">
-                        <!-- L'historique apparaît ici -->
-                    </div>
                 </div>
             </div>
 
-            <div id="playlistContainer" class="playlist-view hidden">
-                <div class="playlist-header">
-                    <img id="channelThumbnail" src="https://via.placeholder.com/150" alt="Channel thumbnail">
-                    <div class="playlist-details">
-                        <span>Playlist</span>
-                        <h1 id="channelName">Nom de la chaîne</h1>
-                        <p id="channelDescription">Description de la playlist...</p>
-                        <div class="playlist-stats">
-                            <span id="videoCountInfo"></span>
-                            <button id="openYouTubeBtn" class="youtube-btn">
-                                <i class="fab fa-youtube"></i> Ouvrir sur YouTube
-                            </button>
+            <!-- Section YouTube -->
+            <div id="youtube-section" class="tab-content active">
+                <header class="main-header">
+                    <h2>Générer une Playlist YouTube</h2>
+                    <p>Collez l'URL d'une chaîne pour créer une playlist triée par popularité.</p>
+                </header>
+
+                <div class="form-container">
+                    <form id="playlistForm">
+                        <div class="input-group">
+                            <i class="fab fa-youtube"></i>
+                            <input type="url" id="channelUrl" placeholder="URL de la chaîne YouTube" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-list-ol"></i>
+                            <select id="videoCount">
+                                <option value="10">10 vidéos</option>
+                                <option value="25" selected>25 vidéos</option>
+                                <option value="50">50 vidéos</option>
+                                <option value="100">100 vidéos</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="generateBtn">
+                            <span id="btnText">Générer</span>
+                            <span id="loading" class="hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                        </button>
+                    </form>
+                </div>
+                <div id="error" class="error-message hidden"></div>
+
+                <!-- Historique des recherches YouTube -->
+                <div class="search-history-container">
+                    <div class="search-history-header">
+                        <h3><i class="fas fa-history"></i> Historique YouTube</h3>
+                        <button id="clearHistoryBtn" class="clear-history-btn">
+                            <i class="fas fa-trash"></i>
+                            Effacer l'historique
+                        </button>
+                    </div>
+                    <div id="searchHistory" class="search-history">
+                        <div class="history-list" id="historyList">
+                            <!-- L'historique YouTube apparaît ici -->
                         </div>
                     </div>
                 </div>
 
-                <div class="playlist-table">
-                    <div class="table-header">
-                        <div class="track-number">#</div>
-                        <div class="track-title">Titre</div>
-                        <div class="track-plays">Lectures</div>
-                        <div class="track-likes">Likes</div>
-                        <div class="track-actions"></div>
+                <div id="playlistContainer" class="playlist-view hidden">
+                    <div class="playlist-header">
+                        <img id="channelThumbnail" src="https://via.placeholder.com/150" alt="Channel thumbnail">
+                        <div class="playlist-details">
+                            <span>Playlist</span>
+                            <h1 id="channelName">Nom de la chaîne</h1>
+                            <p id="channelDescription">Description de la playlist...</p>
+                            <div class="playlist-stats">
+                                <span id="videoCountInfo"></span>
+                                <button id="openYouTubeBtn" class="youtube-btn">
+                                    <i class="fab fa-youtube"></i> Ouvrir sur YouTube
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div id="playlist" class="table-body">
-                        <!-- Les vidéos apparaissent ici -->
+
+                    <div class="playlist-table">
+                        <div class="table-header">
+                            <div class="track-number">#</div>
+                            <div class="track-title">Titre</div>
+                            <div class="track-plays">Lectures</div>
+                            <div class="track-likes">Likes</div>
+                            <div class="track-actions"></div>
+                        </div>
+                        <div id="playlist" class="table-body">
+                            <!-- Les vidéos apparaissent ici -->
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Section Discogs -->
+            <div id="discogs-section" class="tab-content">
+                <header class="main-header">
+                    <h2>Discogs</h2>
+                    <p>Fonctionnalité Discogs en cours de développement...</p>
+                </header>
+
+                <div class="placeholder-content">
+                    <div class="placeholder-icon">
+                        <i class="fas fa-compact-disc"></i>
+                    </div>
+                    <h3>Bientôt disponible</h3>
+                    <p>L'intégration Discogs sera ajoutée prochainement.</p>
                 </div>
             </div>
         </main>
@@ -153,6 +186,6 @@
     </div>
     
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="script.js?v=1.5"></script>
+    <script src="script.js?v=1.7"></script>
 </body>
 </html> 
